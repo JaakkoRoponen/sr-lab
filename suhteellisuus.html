@@ -377,8 +377,8 @@
         // Toggle button definitions: [key, label, onToggle, initial, modes] or 'Group Name'
         const toggles = [
             'Reference Frame',
-            ['showGrid', 'Grid', () => grid.visible = state.showGrid],
-            ['followTime', "Grid follow t'", () => updateCameraFollowState()],
+            ['showGrid', 'Grid', () => { grid.visible = state.showGrid; updateGridDependents(); }],
+            ['followTime', "Grid follow t'", () => updateGridDependents()],
             ['cameraFollow', 'Lock camera to grid', null, false],
             ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
 
@@ -398,11 +398,17 @@
         state.futureCone = true;
         state.pastCone = true;
 
-        // Camera follow depends on followTime (visually disabled when followTime is off)
+        // Dependency chain: Grid → Grid follow t' → Lock camera to grid
+        let followTimeBtn = null;
         let cameraFollowBtn = null;
-        function updateCameraFollowState() {
+        function updateGridDependents() {
+            // Grid follow t' disabled when Grid is off
+            if (followTimeBtn) {
+                followTimeBtn.classList.toggle('disabled', !state.showGrid);
+            }
+            // Lock camera disabled when Grid or Grid follow t' is off
             if (cameraFollowBtn) {
-                cameraFollowBtn.classList.toggle('disabled', !state.followTime);
+                cameraFollowBtn.classList.toggle('disabled', !state.showGrid || !state.followTime);
             }
         }
 
@@ -441,12 +447,13 @@
             update();
             container.appendChild(btn);
 
-            // Store reference to camera follow button
+            // Store references to dependent buttons
+            if (key === 'followTime') followTimeBtn = btn;
             if (key === 'cameraFollow') cameraFollowBtn = btn;
         });
 
         // Initial state check
-        updateCameraFollowState();
+        updateGridDependents();
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
