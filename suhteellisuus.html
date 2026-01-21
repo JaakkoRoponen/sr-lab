@@ -58,6 +58,12 @@
         h3 {
             margin: 0 0 10px;
             color: var(--accent-gold);
+            cursor: grab;
+            user-select: none;
+        }
+
+        h3:active {
+            cursor: grabbing;
         }
 
         .slider-group {
@@ -458,6 +464,25 @@
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
+
+        // Draggable panel
+        const panel = $('ui');
+        const handle = panel.querySelector('h3');
+        let dragging = false, dragOffset = { x: 0, y: 0 };
+
+        handle.onmousedown = (e) => {
+            dragging = true;
+            dragOffset.x = e.clientX - panel.offsetLeft;
+            dragOffset.y = e.clientY - panel.offsetTop;
+        };
+
+        document.onmousemove = (e) => {
+            if (!dragging) return;
+            panel.style.left = (e.clientX - dragOffset.x) + 'px';
+            panel.style.top = (e.clientY - dragOffset.y) + 'px';
+        };
+
+        document.onmouseup = () => dragging = false;
 
         // Resize
         onresize = () => {
