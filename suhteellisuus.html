@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fi">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Lorentz 3D Simulaattori</title>
+    <title>Lorentz Simulator</title>
     <style>
         body {
             margin: 0;
@@ -77,26 +77,26 @@
 <body>
 
     <div id="ui">
-        <h3 style="margin: 0 0 10px 0; color: #facc15;">Lorentz Hallinta</h3>
+        <h3 style="margin: 0 0 10px 0; color: #facc15;">Lorentz Simulator</h3>
 
-        <div class="label">Nopeus (v/c): <b id="v-val">0.00</b></div>
+        <div class="label">Velocity (v/c): <b id="v-val">0.00</b></div>
         <input type="range" id="v-slider" min="-0.95" max="0.99" step="0.01" value="0">
 
-        <div class="label" style="margin-top:10px;">Lepopituus (L'): <b id="l-val">20.00</b></div>
+        <div class="label" style="margin-top:10px;">Rest length (L'): <b id="l-val">20.00</b></div>
         <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
 
-        <div class="label" style="margin-top:10px;">Oma aika (t'): <b id="t-val">0.00</b></div>
+        <div class="label" style="margin-top:10px;">Proper time (t'): <b id="t-val">0.00</b></div>
         <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
 
         <div class="controls">
-            <button id="btn-grid" class="active" data-on="Taso: PÄÄLLÄ" data-off="Taso: POIS">Taso: PÄÄLLÄ</button>
-            <button id="btn-follow" class="active" data-on="Liikkuva taso: PÄÄLLÄ" data-off="Liikkuva taso: POIS">Liikkuva taso: PÄÄLLÄ</button>
-            <button id="btn-camera" class="off" data-on="Kameran seuranta: PÄÄLLÄ" data-off="Kameran seuranta: POIS">Kameran seuranta: POIS</button>
-            <button id="btn-axes" class="off" data-on="Akselit: PÄÄLLÄ" data-off="Akselit: POIS">Akselit: POIS</button>
-            <button id="btn-future" class="active" data-on="Tulevaisuus: PÄÄLLÄ" data-off="Tulevaisuus: POIS">Tulevaisuus: PÄÄLLÄ</button>
-            <button id="btn-past" class="active" data-on="Menneisyys: PÄÄLLÄ" data-off="Menneisyys: POIS">Menneisyys: PÄÄLLÄ</button>
-            <button id="btn-mode" class="active">Valo: Pallot (1D)</button>
-            <button id="btn-line" class="active" data-on="Maailmanviivat: PÄÄLLÄ" data-off="Maailmanviivat: POIS">Maailmanviivat: PÄÄLLÄ</button>
+            <button id="btn-grid" class="active" data-on="Grid: ON" data-off="Grid: OFF">Grid: ON</button>
+            <button id="btn-follow" class="active" data-on="Moving grid: ON" data-off="Moving grid: OFF">Moving grid: ON</button>
+            <button id="btn-camera" class="off" data-on="Camera follow: ON" data-off="Camera follow: OFF">Camera follow: OFF</button>
+            <button id="btn-axes" class="off" data-on="Axes: ON" data-off="Axes: OFF">Axes: OFF</button>
+            <button id="btn-future" class="active" data-on="Future cone: ON" data-off="Future cone: OFF">Future cone: ON</button>
+            <button id="btn-past" class="active" data-on="Past cone: ON" data-off="Past cone: OFF">Past cone: ON</button>
+            <button id="btn-mode" class="active">Light: Spheres (1D)</button>
+            <button id="btn-line" class="active" data-on="Worldlines: ON" data-off="Worldlines: OFF">Worldlines: ON</button>
         </div>
     </div>
 
@@ -159,13 +159,13 @@
             return ball;
         });
 
-        // Maailmanviivat
+        // Worldlines
         const leftLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf43f5e }));
         const rightLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf43f5e }));
         const worldLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.5 }));
         scene.add(leftLine, rightLine, worldLine);
 
-        // Laboratorioakselit (Harmaat)
+        // Lab frame axes (Gray)
         const axisMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.8 });
         const labXAxis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-200, 0, 0), new THREE.Vector3(200, 0, 0)]), axisMat);
         const labTAxis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -200, 0), new THREE.Vector3(0, 200, 0)]), axisMat);
@@ -208,12 +208,12 @@
 
         document.getElementById('btn-mode').onclick = (e) => {
             state.lightMode = (state.lightMode + 1) % 3;
-            const labels = ["Valo: PIILOTETTU", "Valo: Pallot (1D)", "Valo: Rengas (2D)"];
+            const labels = ["Light: HIDDEN", "Light: Spheres (1D)", "Light: Ring (2D)"];
             e.target.innerText = labels[state.lightMode];
             e.target.className = state.lightMode === 0 ? 'off' : 'active';
         };
 
-        // Tuplaklikkaus nollaa sliderit
+        // Double-click resets sliders
         ui.v.ondblclick = () => ui.v.value = 0;
         ui.t.ondblclick = () => ui.t.value = 0;
         ui.l.ondblclick = () => ui.l.value = 0;
