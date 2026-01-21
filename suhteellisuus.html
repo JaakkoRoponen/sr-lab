@@ -197,6 +197,11 @@
             e.target.className = state.lightMode === 0 ? 'off' : 'active';
         };
 
+        // Tuplaklikkaus nollaa sliderit
+        ui.v.ondblclick = () => ui.v.value = 0;
+        ui.t.ondblclick = () => ui.t.value = 0;
+        ui.l.ondblclick = () => ui.l.value = 0;
+
         function animate() {
             requestAnimationFrame(animate);
 
@@ -216,10 +221,8 @@
             const oldPos = movingSystem.position.clone();
             movingSystem.position.set(state.followTime ? gamma * v * tp : 0, state.followTime ? gamma * tp : 0, 0);
             movingSystem.rotation.z = angle;
-            // Pidetään gridin mittasuhde vakaana suhteessa omaan aikaan
             movingSystem.scale.x = 1;
 
-            // Päivitä maailmanviivat Lorentz-muunnoksella
             const pointsL = [], pointsR = [], pointsC = [];
             for (let t_line = -100; t_line <= 100; t_line += 5) {
                 pointsC.push(new THREE.Vector3(gamma * (v * t_line), gamma * t_line, 0));
