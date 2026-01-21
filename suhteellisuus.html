@@ -378,8 +378,8 @@
         const toggles = [
             'Reference Frame',
             ['showGrid', 'Grid', () => grid.visible = state.showGrid],
-            ['followTime', 'Moving grid', () => updateCameraFollowState()],
-            ['cameraFollow', 'Camera follow', null, false],
+            ['followTime', "Grid follow t'", () => updateCameraFollowState()],
+            ['cameraFollow', 'Lock camera to grid', null, false],
             ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
 
             'Light Cones',
