@@ -29,11 +29,30 @@
             top: 20px;
             left: 20px;
             width: 280px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
             background: var(--bg-panel);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border);
             z-index: 100;
+        }
+
+        #ui::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #ui::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #ui::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        #ui::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
         }
 
         h3 {
