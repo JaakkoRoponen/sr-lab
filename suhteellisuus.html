@@ -123,6 +123,12 @@
             border-left: 4px solid var(--accent-warn);
         }
 
+        button.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            border-left: 4px solid #475569;
+        }
+
         .stats {
             margin-top: 15px;
             padding-top: 15px;
@@ -372,7 +378,7 @@
         const toggles = [
             'Reference Frame',
             ['showGrid', 'Grid', () => grid.visible = state.showGrid],
-            ['followTime', 'Moving grid'],
+            ['followTime', 'Moving grid', () => updateCameraFollowState()],
             ['cameraFollow', 'Camera follow', null, false],
             ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
 
@@ -391,6 +397,14 @@
         // Initialize state for cone visibility
         state.futureCone = true;
         state.pastCone = true;
+
+        // Camera follow depends on followTime (visually disabled when followTime is off)
+        let cameraFollowBtn = null;
+        function updateCameraFollowState() {
+            if (cameraFollowBtn) {
+                cameraFollowBtn.classList.toggle('disabled', !state.followTime);
+            }
+        }
 
         // Build toggle buttons
         const container = $('toggle-buttons');
@@ -426,7 +440,13 @@
 
             update();
             container.appendChild(btn);
+
+            // Store reference to camera follow button
+            if (key === 'cameraFollow') cameraFollowBtn = btn;
         });
+
+        // Initial state check
+        updateCameraFollowState();
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
@@ -525,8 +545,8 @@
                 new THREE.Vector3(lab.x + 60, lab.t, 0.5)
             ]);
 
-            // Camera follow
-            if (state.cameraFollow) {
+            // Camera follow (only when moving grid is also on)
+            if (state.cameraFollow && state.followTime) {
                 const delta = movingFrame.position.clone().sub(oldPos);
                 camera.position.add(delta);
                 controls.target.add(delta);
