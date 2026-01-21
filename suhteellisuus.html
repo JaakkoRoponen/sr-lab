@@ -79,8 +79,22 @@
 
         .controls {
             display: grid;
-            gap: 8px;
+            gap: 6px;
             margin-top: 15px;
+        }
+
+        .control-group {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-top: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .control-group:first-child {
+            margin-top: 0;
         }
 
         button {
@@ -354,19 +368,24 @@
         const displays = { v: $('v-val'), t: $('t-val'), l: $('l-val') };
         const stats = { gamma: $('stat-gamma'), t: $('stat-t'), x: $('stat-x'), l: $('stat-l'), contraction: $('stat-contraction'), dilation: $('stat-dilation') };
 
-        // Toggle button definitions
+        // Toggle button definitions: [key, label, onToggle, initial, modes] or 'Group Name'
         const toggles = [
+            'Reference Frame',
             ['showGrid', 'Grid', () => grid.visible = state.showGrid],
             ['followTime', 'Moving grid'],
             ['cameraFollow', 'Camera follow', null, false],
-            ['showAxes', 'Axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
-            ['futureCone', 'Future cone', () => futureCone.group.visible = state.futureCone],
-            ['pastCone', 'Past cone', () => pastCone.group.visible = state.pastCone],
-            ['lightMode', 'Light', null, 1, ['HIDDEN', 'Spheres (1D)', 'Ring (2D)']],
+            ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
+
+            'Light Cones',
+            ['futureCone', 'Future', () => futureCone.group.visible = state.futureCone],
+            ['pastCone', 'Past', () => pastCone.group.visible = state.pastCone],
+            ['lightMode', 'Light pulses', null, 1, ['OFF', '1D', '2D']],
+
+            'Visualizations',
             ['showWorldlines', 'Worldlines', () => worldlines.center.visible = worldlines.left.visible = worldlines.right.visible = state.showWorldlines],
+            ['showTicks', 'Time ticks', () => ticks.visible = state.showTicks],
             ['showRods', 'Length rods'],
-            ['showSimultaneity', 'Simultaneity', () => labNowLine.visible = state.showSimultaneity],
-            ['showTicks', 'Time ticks', () => ticks.visible = state.showTicks]
+            ['showSimultaneity', 'Lab "now"', () => labNowLine.visible = state.showSimultaneity]
         ];
 
         // Initialize state for cone visibility
@@ -375,7 +394,17 @@
 
         // Build toggle buttons
         const container = $('toggle-buttons');
-        toggles.forEach(([key, label, onToggle, initial = true, modes]) => {
+        toggles.forEach((item) => {
+            // Group header
+            if (typeof item === 'string') {
+                const header = document.createElement('div');
+                header.className = 'control-group';
+                header.textContent = item;
+                container.appendChild(header);
+                return;
+            }
+
+            const [key, label, onToggle, initial = true, modes] = item;
             if (state[key] === undefined) state[key] = initial;
             const btn = document.createElement('button');
 
