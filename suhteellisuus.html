@@ -383,8 +383,9 @@
             ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
 
             'Light Cones',
-            ['futureCone', 'Future', () => futureCone.group.visible = state.futureCone],
-            ['pastCone', 'Past', () => pastCone.group.visible = state.pastCone],
+            ['futureCone', 'Future lines', () => { }],
+            ['pastCone', 'Past lines', () => { }],
+            ['showConeMesh', 'Cone mesh', () => { }, false],
             ['lightMode', 'Light pulses', null, 1, ['OFF', '1D', '2D']],
 
             'Visualizations',
@@ -491,9 +492,10 @@
             stats.dilation.innerText = gamma.toFixed(3) + '×';
 
             // Light cones
-            const show2D = state.lightMode === 2, show1D = state.lightMode === 1;
-            futureCone.mesh.visible = pastCone.mesh.visible = show2D;
-            [...futureCone.lines, ...pastCone.lines].forEach(l => l.visible = show1D);
+            futureCone.lines.forEach(l => l.visible = state.futureCone);
+            pastCone.lines.forEach(l => l.visible = state.pastCone);
+            futureCone.mesh.visible = state.showConeMesh && state.futureCone;
+            pastCone.mesh.visible = state.showConeMesh && state.pastCone;
 
             // Moving frame
             const oldPos = movingFrame.position.clone();
