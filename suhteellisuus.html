@@ -175,6 +175,7 @@
             <button id="btn-line" class="active" data-on="Worldlines: ON" data-off="Worldlines: OFF">Worldlines: ON</button>
             <button id="btn-rods" class="active" data-on="Length rods: ON" data-off="Length rods: OFF">Length rods: ON</button>
             <button id="btn-simul" class="active" data-on="Simultaneity: ON" data-off="Simultaneity: OFF">Simultaneity: ON</button>
+            <button id="btn-ticks" class="active" data-on="Time ticks: ON" data-off="Time ticks: OFF">Time ticks: ON</button>
         </div>
 
         <div class="stats">
@@ -247,7 +248,9 @@
             },
             worldline: {
                 range: 100,
-                step: 5
+                step: 5,
+                tickInterval: 5,  // Proper time interval between ticks
+                tickSize: 1.5      // Length of tick marks
             }
         };
 
@@ -443,6 +446,12 @@
             );
         }
 
+        /** Create tick marks for worldlines showing proper time intervals */
+        function createWorldlineTicks() {
+            const tickMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
+            return new THREE.LineSegments(new THREE.BufferGeometry(), tickMat);
+        }
+
         // Initialize scene objects
         const futureCone = createLightCone(true);
         const pastCone = createLightCone(false);
@@ -467,6 +476,9 @@
         const labNowLine = createLabNowLine();
         scene.add(labNowLine);
 
+        const worldlineTicks = createWorldlineTicks();
+        scene.add(worldlineTicks);
+
         // ============================================
         // APPLICATION STATE
         // ============================================
@@ -478,7 +490,8 @@
             showAxes: false,        // Show lab frame axes
             showGrid: true,         // Show moving frame grid
             showRods: true,         // Show length comparison rods
-            showSimultaneity: true  // Show simultaneity markers
+            showSimultaneity: true, // Show simultaneity markers
+            showTicks: true         // Show proper time tick marks
         };
 
         // ============================================
@@ -551,6 +564,9 @@
 
         document.getElementById('btn-simul').onclick =
             createToggleHandler('showSimultaneity', (on) => labNowLine.visible = on);
+
+        document.getElementById('btn-ticks').onclick =
+            createToggleHandler('showTicks', (on) => worldlineTicks.visible = on);
 
         document.getElementById('btn-future').onclick = (e) => {
             futureCone.group.visible = !futureCone.group.visible;
@@ -669,6 +685,27 @@
             worldlines.center.geometry.setFromPoints(calculateWorldlinePoints(0, v, gamma));
             worldlines.left.geometry.setFromPoints(calculateWorldlinePoints(-lPrime / 2, v, gamma));
             worldlines.right.geometry.setFromPoints(calculateWorldlinePoints(lPrime / 2, v, gamma));
+
+            // Update proper time tick marks on center worldline
+            if (state.showTicks) {
+                const { range, tickInterval, tickSize } = CONFIG.worldline;
+                const tickPoints = [];
+
+                for (let tp = -range; tp <= range; tp += tickInterval) {
+                    const pos = Physics.lorentzTransform(0, tp, v);
+                    // Tick is perpendicular to worldline (along simultaneity direction)
+                    const dx = Math.cos(angle) * tickSize;
+                    const dt = Math.sin(angle) * tickSize;
+                    tickPoints.push(
+                        new THREE.Vector3(pos.x - dx, pos.t - dt, 0.1),
+                        new THREE.Vector3(pos.x + dx, pos.t + dt, 0.1)
+                    );
+                }
+                worldlineTicks.geometry.setFromPoints(tickPoints);
+                worldlineTicks.visible = true;
+            } else {
+                worldlineTicks.visible = false;
+            }
 
             // Update light balls
             updateLightBalls(v, gamma, tPrime);
