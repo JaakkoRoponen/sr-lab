@@ -10,18 +10,16 @@
             --bg-panel: rgba(15, 23, 42, 0.95);
             --bg-button: #1e293b;
             --bg-button-hover: #334155;
-            --border-primary: #334155;
-            --border-secondary: #475569;
+            --border: #334155;
             --accent: #38bdf8;
-            --accent-warning: #f43f5e;
+            --accent-warn: #f43f5e;
             --accent-gold: #facc15;
-            --text-primary: white;
         }
 
         body {
             margin: 0;
             background: var(--bg-primary);
-            color: var(--text-primary);
+            color: white;
             font-family: system-ui, -apple-system, sans-serif;
             overflow: hidden;
         }
@@ -34,12 +32,12 @@
             background: var(--bg-panel);
             padding: 20px;
             border-radius: 12px;
-            border: 1px solid var(--border-primary);
+            border: 1px solid var(--border);
             z-index: 100;
         }
 
         h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 10px;
             color: var(--accent-gold);
         }
 
@@ -47,35 +45,29 @@
             margin-bottom: 12px;
         }
 
-        .slider-group:first-of-type {
-            margin-top: 0;
-        }
-
         .label {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
             font-size: 0.9em;
+            margin-bottom: 5px;
         }
 
         input[type=range] {
             width: 100%;
             cursor: pointer;
             accent-color: var(--accent);
-            margin-top: 5px;
         }
 
         .controls {
             display: grid;
-            grid-template-columns: 1fr;
             gap: 8px;
             margin-top: 15px;
         }
 
         button {
             background: var(--bg-button);
-            color: var(--text-primary);
-            border: 1px solid var(--border-secondary);
+            color: white;
+            border: 1px solid #475569;
             padding: 10px;
             border-radius: 6px;
             cursor: pointer;
@@ -95,17 +87,17 @@
 
         button.off {
             opacity: 0.5;
-            border-left: 4px solid var(--accent-warning);
+            border-left: 4px solid var(--accent-warn);
         }
 
         .stats {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid var(--border-primary);
+            border-top: 1px solid var(--border);
         }
 
         .stats h4 {
-            margin: 0 0 10px 0;
+            margin: 0 0 10px;
             font-size: 0.85em;
             color: var(--accent);
             text-transform: uppercase;
@@ -129,18 +121,12 @@
         }
 
         .stat-value {
-            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-family: 'SF Mono', monospace;
             color: var(--accent-gold);
         }
 
         .stat-value.highlight {
             color: var(--accent);
-        }
-
-        .stat-formula {
-            font-size: 0.75em;
-            color: #64748b;
-            margin-top: 2px;
         }
     </style>
 </head>
@@ -164,19 +150,7 @@
             <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
         </div>
 
-        <div class="controls">
-            <button id="btn-grid" class="active" data-on="Grid: ON" data-off="Grid: OFF">Grid: ON</button>
-            <button id="btn-follow" class="active" data-on="Moving grid: ON" data-off="Moving grid: OFF">Moving grid: ON</button>
-            <button id="btn-camera" class="off" data-on="Camera follow: ON" data-off="Camera follow: OFF">Camera follow: OFF</button>
-            <button id="btn-axes" class="off" data-on="Axes: ON" data-off="Axes: OFF">Axes: OFF</button>
-            <button id="btn-future" class="active" data-on="Future cone: ON" data-off="Future cone: OFF">Future cone: ON</button>
-            <button id="btn-past" class="active" data-on="Past cone: ON" data-off="Past cone: OFF">Past cone: ON</button>
-            <button id="btn-mode" class="active">Light: Spheres (1D)</button>
-            <button id="btn-line" class="active" data-on="Worldlines: ON" data-off="Worldlines: OFF">Worldlines: ON</button>
-            <button id="btn-rods" class="active" data-on="Length rods: ON" data-off="Length rods: OFF">Length rods: ON</button>
-            <button id="btn-simul" class="active" data-on="Simultaneity: ON" data-off="Simultaneity: OFF">Simultaneity: ON</button>
-            <button id="btn-ticks" class="active" data-on="Time ticks: ON" data-off="Time ticks: OFF">Time ticks: ON</button>
-        </div>
+        <div class="controls" id="toggle-buttons"></div>
 
         <div class="stats">
             <h4>Lab Frame Observations</h4>
@@ -208,12 +182,7 @@
     </div>
 
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
     </script>
 
     <script type="module">
@@ -224,516 +193,291 @@
         // CONFIGURATION
         // ============================================
         const CONFIG = {
-            cone: {
-                size: 100,
-                segments: 64
-            },
+            coneSize: 100,
+            coneSegments: 64,
+            worldlineRange: 100,
+            tickInterval: 5,
+            tickSize: 1.5,
             colors: {
-                lightCone: 0xfacc15,
-                grid: { primary: 0x38bdf8, secondary: 0x1e293b },
-                worldline: { center: 0x10b981, edges: 0xf43f5e },
+                cone: 0xfacc15,
+                grid: [0x38bdf8, 0x1e293b],
+                worldline: [0x10b981, 0xf43f5e],
                 axes: 0x64748b,
-                lightBalls: 0xffffff,
-                rod: {
-                    rest: 0x38bdf8,      // Cyan - rest length in moving frame
-                    contracted: 0xf472b6  // Pink - contracted length in lab frame
-                },
-                simultaneity: 0xf472b6   // Pink - lab frame "now" (horizontal)
-            },
-            camera: {
-                fov: 75,
-                near: 0.1,
-                far: 2000,
-                initialPosition: { x: 45, y: 30, z: 45 }
-            },
-            worldline: {
-                range: 100,
-                step: 5,
-                tickInterval: 5,  // Proper time interval between ticks
-                tickSize: 1.5      // Length of tick marks
+                rod: [0x38bdf8, 0xf472b6],
+                ticks: 0xffffff
             }
         };
 
         // ============================================
-        // PHYSICS UTILITIES
+        // PHYSICS
         // ============================================
         const Physics = {
-            /** Calculate Lorentz factor γ = 1/√(1 - v²) */
-            gamma(v) {
-                return 1 / Math.sqrt(1 - v * v);
+            gamma: (v) => 1 / Math.sqrt(1 - v * v),
+            transform: (x, t, v) => {
+                const g = Physics.gamma(v);
+                return { x: g * (x + v * t), t: g * (t + v * x) };
             },
-
-            /** Lorentz transform from moving frame (x', t') to lab frame (x, t) */
-            lorentzTransform(xPrime, tPrime, v) {
-                const g = this.gamma(v);
-                return {
-                    x: g * (xPrime + v * tPrime),
-                    t: g * (tPrime + v * xPrime)
-                };
-            },
-
-            /** Get simultaneity angle for spacetime diagram */
-            simultaneityAngle(v) {
-                return Math.atan(v);
-            }
+            angle: (v) => Math.atan(v)
         };
 
         // ============================================
-        // THREE.JS SCENE SETUP
+        // THREE.JS SETUP
         // ============================================
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(
-            CONFIG.camera.fov,
-            window.innerWidth / window.innerHeight,
-            CONFIG.camera.near,
-            CONFIG.camera.far
-        );
+        const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 2000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
-
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(innerWidth, innerHeight);
         document.body.appendChild(renderer.domElement);
-
-        camera.position.set(
-            CONFIG.camera.initialPosition.x,
-            CONFIG.camera.initialPosition.y,
-            CONFIG.camera.initialPosition.z
-        );
+        camera.position.set(45, 30, 45);
         const controls = new OrbitControls(camera, renderer.domElement);
+
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+        const line = (color, opacity = 1) => new THREE.Line(
+            new THREE.BufferGeometry(),
+            new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity })
+        );
+
+        const box = (color, opacity = 1) => new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1.5, 0.5),
+            new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity })
+        );
 
         // ============================================
         // SCENE OBJECTS
         // ============================================
-
-        /** Create a light cone (future or past) */
-        function createLightCone(isFuture) {
-            const { size, segments } = CONFIG.cone;
-            const color = CONFIG.colors.lightCone;
-
+        const createCone = (future) => {
+            const { coneSize: s, coneSegments: seg, colors: { cone: c } } = CONFIG;
             const group = new THREE.Group();
 
-            // Wireframe cone mesh
-            const cone = new THREE.Mesh(
-                new THREE.ConeGeometry(size, size, segments, 1, true),
-                new THREE.MeshBasicMaterial({
-                    color,
-                    wireframe: true,
-                    transparent: true,
-                    opacity: 0.1,
-                    side: THREE.DoubleSide
-                })
+            const mesh = new THREE.Mesh(
+                new THREE.ConeGeometry(s, s, seg, 1, true),
+                new THREE.MeshBasicMaterial({ color: c, wireframe: true, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
             );
-            cone.position.y = isFuture ? size / 2 : -size / 2;
-            if (isFuture) cone.rotation.x = Math.PI;
+            mesh.position.y = future ? s / 2 : -s / 2;
+            if (future) mesh.rotation.x = Math.PI;
 
-            // 1D light lines (x-axis only)
-            const lineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.6 });
-            const yDir = isFuture ? size : -size;
+            const lineMat = new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.6 });
+            const y = future ? s : -s;
+            const l1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(s, y, 0)]), lineMat);
+            const l2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-s, y, 0)]), lineMat);
 
-            const line1 = new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(size, yDir, 0)
-                ]),
-                lineMat
-            );
-            const line2 = new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(-size, yDir, 0)
-                ]),
-                lineMat
-            );
+            group.add(mesh, l1, l2);
+            return { group, mesh, lines: [l1, l2] };
+        };
 
-            group.add(cone, line1, line2);
-
-            return { group, cone, lines: [line1, line2] };
-        }
-
-        /** Create lab frame coordinate axes */
-        function createLabAxes() {
-            const axisMat = new THREE.LineBasicMaterial({
-                color: CONFIG.colors.axes,
-                transparent: true,
-                opacity: 0.8
-            });
-            const range = 200;
-
-            const xAxis = new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(-range, 0, 0),
-                    new THREE.Vector3(range, 0, 0)
-                ]),
-                axisMat
-            );
-            const tAxis = new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, -range, 0),
-                    new THREE.Vector3(0, range, 0)
-                ]),
-                axisMat
-            );
-
-            xAxis.visible = false;
-            tAxis.visible = false;
-
-            return { x: xAxis, t: tAxis };
-        }
-
-        /** Create worldline objects */
-        function createWorldlines() {
-            const edgeMat = new THREE.LineBasicMaterial({ color: CONFIG.colors.worldline.edges });
-            const centerMat = new THREE.LineBasicMaterial({
-                color: CONFIG.colors.worldline.center,
-                transparent: true,
-                opacity: 0.5
-            });
-
-            return {
-                left: new THREE.Line(new THREE.BufferGeometry(), edgeMat),
-                right: new THREE.Line(new THREE.BufferGeometry(), edgeMat),
-                center: new THREE.Line(new THREE.BufferGeometry(), centerMat)
-            };
-        }
-
-        /** Create light pulse visualization balls */
-        function createLightBalls(count) {
-            return Array.from({ length: count }, () => {
-                const ball = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.4, 16, 16),
-                    new THREE.MeshBasicMaterial({ color: CONFIG.colors.lightBalls })
-                );
-                scene.add(ball);
-                return ball;
-            });
-        }
-
-        /** Create visual rods for length comparison */
-        function createLengthRods() {
-            const rodHeight = 1.5;
-            const rodDepth = 0.5;
-
-            // Rest length rod (moving frame) - cyan
-            const restRod = new THREE.Mesh(
-                new THREE.BoxGeometry(1, rodHeight, rodDepth),
-                new THREE.MeshBasicMaterial({
-                    color: CONFIG.colors.rod.rest,
-                    transparent: true,
-                    opacity: 0.9
-                })
-            );
-
-            // Contracted length rod (lab frame) - pink
-            const contractedRod = new THREE.Mesh(
-                new THREE.BoxGeometry(1, rodHeight, rodDepth),
-                new THREE.MeshBasicMaterial({
-                    color: CONFIG.colors.rod.contracted,
-                    transparent: true,
-                    opacity: 0.7
-                })
-            );
-
-            return {
-                rest: restRod,
-                contracted: contractedRod
-            };
-        }
-
-        /** Create lab frame "now" line */
-        function createLabNowLine() {
-            return new THREE.Line(
-                new THREE.BufferGeometry(),
-                new THREE.LineBasicMaterial({ color: CONFIG.colors.simultaneity, transparent: true, opacity: 0.6 })
-            );
-        }
-
-        /** Create tick marks for worldlines showing proper time intervals */
-        function createWorldlineTicks() {
-            const tickMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
-            return new THREE.LineSegments(new THREE.BufferGeometry(), tickMat);
-        }
-
-        // Initialize scene objects
-        const futureCone = createLightCone(true);
-        const pastCone = createLightCone(false);
+        // Light cones
+        const futureCone = createCone(true);
+        const pastCone = createCone(false);
         scene.add(futureCone.group, pastCone.group);
 
+        // Moving frame grid
         const movingFrame = new THREE.Group();
-        const grid = new THREE.GridHelper(100, 50, CONFIG.colors.grid.primary, CONFIG.colors.grid.secondary);
+        const grid = new THREE.GridHelper(100, 50, ...CONFIG.colors.grid);
         movingFrame.add(grid);
         scene.add(movingFrame);
 
-        const lightBalls = createLightBalls(CONFIG.cone.segments);
+        // Worldlines
+        const worldlines = {
+            center: line(CONFIG.colors.worldline[0], 0.5),
+            left: line(CONFIG.colors.worldline[1]),
+            right: line(CONFIG.colors.worldline[1])
+        };
+        scene.add(worldlines.center, worldlines.left, worldlines.right);
 
-        const worldlines = createWorldlines();
-        scene.add(worldlines.left, worldlines.right, worldlines.center);
-
-        const labAxes = createLabAxes();
+        // Lab axes
+        const labAxes = { x: line(CONFIG.colors.axes, 0.8), t: line(CONFIG.colors.axes, 0.8) };
+        labAxes.x.geometry.setFromPoints([new THREE.Vector3(-200, 0, 0), new THREE.Vector3(200, 0, 0)]);
+        labAxes.t.geometry.setFromPoints([new THREE.Vector3(0, -200, 0), new THREE.Vector3(0, 200, 0)]);
+        labAxes.x.visible = labAxes.t.visible = false;
         scene.add(labAxes.x, labAxes.t);
 
-        const lengthRods = createLengthRods();
-        scene.add(lengthRods.rest, lengthRods.contracted);
+        // Length rods
+        const rods = { rest: box(CONFIG.colors.rod[0], 0.9), contracted: box(CONFIG.colors.rod[1], 0.7) };
+        scene.add(rods.rest, rods.contracted);
 
-        const labNowLine = createLabNowLine();
+        // Simultaneity line
+        const labNowLine = line(CONFIG.colors.rod[1], 0.6);
         scene.add(labNowLine);
 
-        const worldlineTicks = createWorldlineTicks();
-        scene.add(worldlineTicks);
+        // Tick marks
+        const ticks = new THREE.LineSegments(
+            new THREE.BufferGeometry(),
+            new THREE.LineBasicMaterial({ color: CONFIG.colors.ticks, transparent: true, opacity: 0.7 })
+        );
+        scene.add(ticks);
+
+        // Light balls
+        const lightBalls = Array.from({ length: CONFIG.coneSegments }, () => {
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            scene.add(ball);
+            return ball;
+        });
 
         // ============================================
-        // APPLICATION STATE
+        // STATE & UI
         // ============================================
         const state = {
-            lightMode: 1,           // 0: hidden, 1: spheres (1D), 2: ring (2D)
-            followTime: true,       // Moving grid follows proper time
-            cameraFollow: false,    // Camera follows moving frame
-            showLines: true,        // Show worldlines
-            showAxes: false,        // Show lab frame axes
-            showGrid: true,         // Show moving frame grid
-            showRods: true,         // Show length comparison rods
-            showSimultaneity: true, // Show simultaneity markers
-            showTicks: true         // Show proper time tick marks
+            lightMode: 1,
+            followTime: true,
+            cameraFollow: false,
+            showWorldlines: true,
+            showAxes: false,
+            showGrid: true,
+            showRods: true,
+            showSimultaneity: true,
+            showTicks: true
         };
 
-        // ============================================
-        // UI ELEMENTS
-        // ============================================
-        const ui = {
-            sliders: {
-                v: document.getElementById('v-slider'),
-                t: document.getElementById('t-slider'),
-                l: document.getElementById('l-slider')
-            },
-            displays: {
-                v: document.getElementById('v-val'),
-                t: document.getElementById('t-val'),
-                l: document.getElementById('l-val')
-            },
-            stats: {
-                gamma: document.getElementById('stat-gamma'),
-                t: document.getElementById('stat-t'),
-                x: document.getElementById('stat-x'),
-                l: document.getElementById('stat-l'),
-                contraction: document.getElementById('stat-contraction'),
-                dilation: document.getElementById('stat-dilation')
-            }
-        };
+        const $ = (id) => document.getElementById(id);
+        const sliders = { v: $('v-slider'), t: $('t-slider'), l: $('l-slider') };
+        const displays = { v: $('v-val'), t: $('t-val'), l: $('l-val') };
+        const stats = { gamma: $('stat-gamma'), t: $('stat-t'), x: $('stat-x'), l: $('stat-l'), contraction: $('stat-contraction'), dilation: $('stat-dilation') };
 
-        /** Update toggle button state and text */
-        function updateButton(btn, active) {
-            btn.classList.toggle('active', active);
-            btn.classList.toggle('off', !active);
-            btn.innerText = active ? btn.dataset.on : btn.dataset.off;
-        }
+        // Toggle button definitions
+        const toggles = [
+            ['showGrid', 'Grid', () => grid.visible = state.showGrid],
+            ['followTime', 'Moving grid'],
+            ['cameraFollow', 'Camera follow', null, false],
+            ['showAxes', 'Axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
+            ['futureCone', 'Future cone', () => futureCone.group.visible = state.futureCone],
+            ['pastCone', 'Past cone', () => pastCone.group.visible = state.pastCone],
+            ['lightMode', 'Light', null, 1, ['HIDDEN', 'Spheres (1D)', 'Ring (2D)']],
+            ['showWorldlines', 'Worldlines', () => worldlines.center.visible = worldlines.left.visible = worldlines.right.visible = state.showWorldlines],
+            ['showRods', 'Length rods'],
+            ['showSimultaneity', 'Simultaneity', () => labNowLine.visible = state.showSimultaneity],
+            ['showTicks', 'Time ticks', () => ticks.visible = state.showTicks]
+        ];
 
-        /** Create a toggle handler for a state property */
-        function createToggleHandler(stateKey, onToggle) {
-            return (e) => {
-                state[stateKey] = !state[stateKey];
-                updateButton(e.target, state[stateKey]);
-                onToggle?.(state[stateKey]);
-            };
-        }
+        // Initialize state for cone visibility
+        state.futureCone = true;
+        state.pastCone = true;
 
-        // ============================================
-        // EVENT HANDLERS
-        // ============================================
+        // Build toggle buttons
+        const container = $('toggle-buttons');
+        toggles.forEach(([key, label, onToggle, initial = true, modes]) => {
+            if (state[key] === undefined) state[key] = initial;
+            const btn = document.createElement('button');
 
-        // Toggle buttons
-        document.getElementById('btn-grid').onclick =
-            createToggleHandler('showGrid', (on) => grid.visible = on);
-
-        document.getElementById('btn-follow').onclick =
-            createToggleHandler('followTime');
-
-        document.getElementById('btn-camera').onclick =
-            createToggleHandler('cameraFollow');
-
-        document.getElementById('btn-axes').onclick =
-            createToggleHandler('showAxes', (on) => labAxes.x.visible = labAxes.t.visible = on);
-
-        document.getElementById('btn-line').onclick =
-            createToggleHandler('showLines', (on) => {
-                worldlines.left.visible = worldlines.right.visible = worldlines.center.visible = on;
-            });
-
-        document.getElementById('btn-rods').onclick =
-            createToggleHandler('showRods', (on) => {
-                lengthRods.rest.visible = on;
-                lengthRods.contracted.visible = on;
-            });
-
-        document.getElementById('btn-simul').onclick =
-            createToggleHandler('showSimultaneity', (on) => labNowLine.visible = on);
-
-        document.getElementById('btn-ticks').onclick =
-            createToggleHandler('showTicks', (on) => worldlineTicks.visible = on);
-
-        document.getElementById('btn-future').onclick = (e) => {
-            futureCone.group.visible = !futureCone.group.visible;
-            updateButton(e.target, futureCone.group.visible);
-        };
-
-        document.getElementById('btn-past').onclick = (e) => {
-            pastCone.group.visible = !pastCone.group.visible;
-            updateButton(e.target, pastCone.group.visible);
-        };
-
-        document.getElementById('btn-mode').onclick = (e) => {
-            state.lightMode = (state.lightMode + 1) % 3;
-            const labels = ['Light: HIDDEN', 'Light: Spheres (1D)', 'Light: Ring (2D)'];
-            e.target.innerText = labels[state.lightMode];
-            e.target.className = state.lightMode === 0 ? 'off' : 'active';
-        };
-
-        // Double-click to reset sliders
-        ui.sliders.v.ondblclick = () => ui.sliders.v.value = 0;
-        ui.sliders.t.ondblclick = () => ui.sliders.t.value = 0;
-        ui.sliders.l.ondblclick = () => ui.sliders.l.value = 0;
-
-        // Window resize
-        window.onresize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
-
-        // ============================================
-        // ANIMATION LOOP
-        // ============================================
-
-        /** Calculate worldline points for an object at x' position */
-        function calculateWorldlinePoints(xPrime, v, gamma) {
-            const { range, step } = CONFIG.worldline;
-            const points = [];
-
-            for (let tPrime = -range; tPrime <= range; tPrime += step) {
-                const transformed = Physics.lorentzTransform(xPrime, tPrime, v);
-                points.push(new THREE.Vector3(transformed.x, transformed.t, 0));
-            }
-
-            return points;
-        }
-
-        /** Update light ball positions */
-        function updateLightBalls(v, gamma, tPrime) {
-            const numBalls = CONFIG.cone.segments;
-
-            lightBalls.forEach((ball, i) => {
-                // In 1D mode, only show two balls (front and back)
-                const isVisible = state.lightMode !== 0 &&
-                    (state.lightMode === 2 || i === 0 || i === numBalls / 2);
-                ball.visible = isVisible;
-
-                if (isVisible) {
-                    const phi = (i / numBalls) * Math.PI * 2;
-                    const xPrime = Math.cos(phi) * tPrime;
-                    const zPrime = Math.sin(phi) * tPrime;
-
-                    const transformed = Physics.lorentzTransform(xPrime, tPrime, v);
-                    ball.position.set(transformed.x, transformed.t, zPrime);
+            const update = () => {
+                if (modes) {
+                    btn.innerText = `${label}: ${modes[state[key]]}`;
+                    btn.className = state[key] === 0 ? 'off' : 'active';
+                } else {
+                    btn.innerText = `${label}: ${state[key] ? 'ON' : 'OFF'}`;
+                    btn.className = state[key] ? 'active' : 'off';
                 }
-            });
-        }
+                onToggle?.();
+            };
 
+            btn.onclick = () => {
+                state[key] = modes ? (state[key] + 1) % modes.length : !state[key];
+                update();
+            };
+
+            update();
+            container.appendChild(btn);
+        });
+
+        // Slider double-click reset
+        Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
+
+        // Resize
+        onresize = () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        };
+
+        // ============================================
+        // ANIMATION
+        // ============================================
         function animate() {
             requestAnimationFrame(animate);
 
-            // Read current values
-            const v = parseFloat(ui.sliders.v.value);
-            const tPrime = parseFloat(ui.sliders.t.value);
-            const lPrime = parseFloat(ui.sliders.l.value);
-
-            // Calculate physics
+            const v = parseFloat(sliders.v.value);
+            const tPrime = parseFloat(sliders.t.value);
+            const lPrime = parseFloat(sliders.l.value);
             const gamma = Physics.gamma(v);
-            const angle = Physics.simultaneityAngle(v);
+            const angle = Physics.angle(v);
+            const lab = Physics.transform(0, tPrime, v);
+            const contracted = lPrime / gamma;
 
-            // Update UI displays
-            ui.displays.v.innerText = v.toFixed(2);
-            ui.displays.t.innerText = tPrime.toFixed(2);
-            ui.displays.l.innerText = lPrime.toFixed(2);
+            // Update displays
+            displays.v.innerText = v.toFixed(2);
+            displays.t.innerText = tPrime.toFixed(2);
+            displays.l.innerText = lPrime.toFixed(2);
+            stats.gamma.innerText = gamma.toFixed(3);
+            stats.t.innerText = lab.t.toFixed(2);
+            stats.x.innerText = lab.x.toFixed(2);
+            stats.l.innerText = contracted.toFixed(2);
+            stats.contraction.innerText = (1 / gamma).toFixed(3) + '×';
+            stats.dilation.innerText = gamma.toFixed(3) + '×';
 
-            // Calculate lab frame values
-            const labCoords = Physics.lorentzTransform(0, tPrime, v);
-            const contractedLength = lPrime / gamma;  // Length contraction: L = L'/γ
+            // Light cones
+            const show2D = state.lightMode === 2, show1D = state.lightMode === 1;
+            futureCone.mesh.visible = pastCone.mesh.visible = show2D;
+            [...futureCone.lines, ...pastCone.lines].forEach(l => l.visible = show1D);
 
-            // Update stats panel
-            ui.stats.gamma.innerText = gamma.toFixed(3);
-            ui.stats.t.innerText = labCoords.t.toFixed(2);
-            ui.stats.x.innerText = labCoords.x.toFixed(2);
-            ui.stats.l.innerText = contractedLength.toFixed(2);
-            ui.stats.contraction.innerText = (1 / gamma).toFixed(3) + '×';
-            ui.stats.dilation.innerText = gamma.toFixed(3) + '×';
-
-            // Update light cone visibility based on mode
-            const show2D = state.lightMode === 2;
-            const show1D = state.lightMode === 1;
-            futureCone.cone.visible = pastCone.cone.visible = show2D;
-            futureCone.lines.forEach(l => l.visible = show1D);
-            pastCone.lines.forEach(l => l.visible = show1D);
-
-            // Update moving reference frame
+            // Moving frame
             const oldPos = movingFrame.position.clone();
-            if (state.followTime) {
-                const origin = Physics.lorentzTransform(0, tPrime, v);
-                movingFrame.position.set(origin.x, origin.t, 0);
-            } else {
-                movingFrame.position.set(0, 0, 0);
-            }
+            movingFrame.position.set(state.followTime ? lab.x : 0, state.followTime ? lab.t : 0, 0);
             movingFrame.rotation.z = angle;
 
-            // Update worldlines
-            worldlines.center.geometry.setFromPoints(calculateWorldlinePoints(0, v, gamma));
-            worldlines.left.geometry.setFromPoints(calculateWorldlinePoints(-lPrime / 2, v, gamma));
-            worldlines.right.geometry.setFromPoints(calculateWorldlinePoints(lPrime / 2, v, gamma));
-
-            // Update proper time tick marks on center worldline
-            if (state.showTicks) {
-                const { range, tickInterval, tickSize } = CONFIG.worldline;
-                const tickPoints = [];
-
-                for (let tp = -range; tp <= range; tp += tickInterval) {
-                    const pos = Physics.lorentzTransform(0, tp, v);
-                    // Tick is perpendicular to worldline (along simultaneity direction)
-                    const dx = Math.cos(angle) * tickSize;
-                    const dt = Math.sin(angle) * tickSize;
-                    tickPoints.push(
-                        new THREE.Vector3(pos.x - dx, pos.t - dt, 0.1),
-                        new THREE.Vector3(pos.x + dx, pos.t + dt, 0.1)
-                    );
+            // Worldlines
+            const worldlinePoints = (x) => {
+                const pts = [];
+                for (let t = -CONFIG.worldlineRange; t <= CONFIG.worldlineRange; t += 5) {
+                    const p = Physics.transform(x, t, v);
+                    pts.push(new THREE.Vector3(p.x, p.t, 0));
                 }
-                worldlineTicks.geometry.setFromPoints(tickPoints);
-                worldlineTicks.visible = true;
-            } else {
-                worldlineTicks.visible = false;
+                return pts;
+            };
+            worldlines.center.geometry.setFromPoints(worldlinePoints(0));
+            worldlines.left.geometry.setFromPoints(worldlinePoints(-lPrime / 2));
+            worldlines.right.geometry.setFromPoints(worldlinePoints(lPrime / 2));
+
+            // Tick marks
+            if (state.showTicks) {
+                const pts = [];
+                for (let t = -CONFIG.worldlineRange; t <= CONFIG.worldlineRange; t += CONFIG.tickInterval) {
+                    const p = Physics.transform(0, t, v);
+                    const dx = Math.cos(angle) * CONFIG.tickSize, dt = Math.sin(angle) * CONFIG.tickSize;
+                    pts.push(new THREE.Vector3(p.x - dx, p.t - dt, 0.1), new THREE.Vector3(p.x + dx, p.t + dt, 0.1));
+                }
+                ticks.geometry.setFromPoints(pts);
             }
 
-            // Update light balls
-            updateLightBalls(v, gamma, tPrime);
+            // Light balls
+            lightBalls.forEach((ball, i) => {
+                const visible = state.lightMode !== 0 && (state.lightMode === 2 || i === 0 || i === CONFIG.coneSegments / 2);
+                ball.visible = visible;
+                if (visible) {
+                    const phi = (i / CONFIG.coneSegments) * Math.PI * 2;
+                    const p = Physics.transform(Math.cos(phi) * tPrime, tPrime, v);
+                    ball.position.set(p.x, p.t, Math.sin(phi) * tPrime);
+                }
+            });
 
-            // Update length comparison rods
+            // Rods
             const showRods = state.showRods && lPrime > 0;
+            rods.rest.position.set(lab.x, lab.t, 0);
+            rods.rest.rotation.z = angle;
+            rods.rest.scale.x = lPrime;
+            rods.rest.visible = showRods;
+            rods.contracted.position.set(lab.x, lab.t, 0.8);
+            rods.contracted.rotation.z = 0;
+            rods.contracted.scale.x = contracted;
+            rods.contracted.visible = showRods;
 
-            // Rest rod: at moving frame origin, tilted with simultaneity
-            lengthRods.rest.position.set(labCoords.x, labCoords.t, 0);
-            lengthRods.rest.rotation.z = angle;
-            lengthRods.rest.scale.x = lPrime;
-            lengthRods.rest.visible = showRods;
-
-            // Contracted rod: horizontal at lab time, length = L'/γ
-            lengthRods.contracted.position.set(labCoords.x, labCoords.t, 0.8);
-            lengthRods.contracted.rotation.z = 0;
-            lengthRods.contracted.scale.x = contractedLength;
-            lengthRods.contracted.visible = showRods;
-
-            // Update lab frame "now" line (horizontal at current lab time)
-            const labT = labCoords.t;
+            // Simultaneity line
             labNowLine.geometry.setFromPoints([
-                new THREE.Vector3(labCoords.x - 60, labT, 0.5),
-                new THREE.Vector3(labCoords.x + 60, labT, 0.5)
+                new THREE.Vector3(lab.x - 60, lab.t, 0.5),
+                new THREE.Vector3(lab.x + 60, lab.t, 0.5)
             ]);
-            labNowLine.visible = state.showSimultaneity;
 
-            // Camera follow mode
+            // Camera follow
             if (state.cameraFollow) {
                 const delta = movingFrame.position.clone().sub(oldPos);
                 camera.position.add(delta);
