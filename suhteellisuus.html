@@ -173,6 +173,7 @@
             <button id="btn-past" class="active" data-on="Past cone: ON" data-off="Past cone: OFF">Past cone: ON</button>
             <button id="btn-mode" class="active">Light: Spheres (1D)</button>
             <button id="btn-line" class="active" data-on="Worldlines: ON" data-off="Worldlines: OFF">Worldlines: ON</button>
+            <button id="btn-rods" class="active" data-on="Length rods: ON" data-off="Length rods: OFF">Length rods: ON</button>
         </div>
 
         <div class="stats">
@@ -230,7 +231,11 @@
                 grid: { primary: 0x38bdf8, secondary: 0x1e293b },
                 worldline: { center: 0x10b981, edges: 0xf43f5e },
                 axes: 0x64748b,
-                lightBalls: 0xffffff
+                lightBalls: 0xffffff,
+                rod: {
+                    rest: 0x38bdf8,      // Cyan - rest length in moving frame
+                    contracted: 0xf472b6  // Pink - contracted length in lab frame
+                }
             },
             camera: {
                 fov: 75,
@@ -397,6 +402,37 @@
             });
         }
 
+        /** Create visual rods for length comparison */
+        function createLengthRods() {
+            const rodHeight = 1.5;
+            const rodDepth = 0.5;
+
+            // Rest length rod (moving frame) - cyan
+            const restRod = new THREE.Mesh(
+                new THREE.BoxGeometry(1, rodHeight, rodDepth),
+                new THREE.MeshBasicMaterial({
+                    color: CONFIG.colors.rod.rest,
+                    transparent: true,
+                    opacity: 0.9
+                })
+            );
+
+            // Contracted length rod (lab frame) - pink
+            const contractedRod = new THREE.Mesh(
+                new THREE.BoxGeometry(1, rodHeight, rodDepth),
+                new THREE.MeshBasicMaterial({
+                    color: CONFIG.colors.rod.contracted,
+                    transparent: true,
+                    opacity: 0.7
+                })
+            );
+
+            return {
+                rest: restRod,
+                contracted: contractedRod
+            };
+        }
+
         // Initialize scene objects
         const futureCone = createLightCone(true);
         const pastCone = createLightCone(false);
@@ -415,6 +451,9 @@
         const labAxes = createLabAxes();
         scene.add(labAxes.x, labAxes.t);
 
+        const lengthRods = createLengthRods();
+        scene.add(lengthRods.rest, lengthRods.contracted);
+
         // ============================================
         // APPLICATION STATE
         // ============================================
@@ -424,7 +463,8 @@
             cameraFollow: false,    // Camera follows moving frame
             showLines: true,        // Show worldlines
             showAxes: false,        // Show lab frame axes
-            showGrid: true          // Show moving frame grid
+            showGrid: true,         // Show moving frame grid
+            showRods: true          // Show length comparison rods
         };
 
         // ============================================
@@ -487,6 +527,12 @@
         document.getElementById('btn-line').onclick =
             createToggleHandler('showLines', (on) => {
                 worldlines.left.visible = worldlines.right.visible = worldlines.center.visible = on;
+            });
+
+        document.getElementById('btn-rods').onclick =
+            createToggleHandler('showRods', (on) => {
+                lengthRods.rest.visible = on;
+                lengthRods.contracted.visible = on;
             });
 
         document.getElementById('btn-future').onclick = (e) => {
@@ -609,6 +655,39 @@
 
             // Update light balls
             updateLightBalls(v, gamma, tPrime);
+
+            // Update length comparison rods
+            if (state.showRods && lPrime > 0) {
+                // REST LENGTH ROD (cyan) - in moving frame at proper time t'
+                // This rod is along the simultaneity surface of the moving frame
+                const leftEnd = Physics.lorentzTransform(-lPrime / 2, tPrime, v);
+                const rightEnd = Physics.lorentzTransform(lPrime / 2, tPrime, v);
+
+                // Position and rotate the rest rod
+                const restCenterX = (leftEnd.x + rightEnd.x) / 2;
+                const restCenterT = (leftEnd.t + rightEnd.t) / 2;
+                lengthRods.rest.position.set(restCenterX, restCenterT, 0);
+                lengthRods.rest.rotation.z = angle;
+                lengthRods.rest.scale.x = lPrime;
+                lengthRods.rest.visible = true;
+
+                // CONTRACTED LENGTH ROD (pink) - what lab frame sees at lab time t
+                // Both ends measured at the SAME lab time (horizontal slice)
+                const labT = labCoords.t;
+                // At lab time t, where are the left and right ends?
+                // x = x'/γ + vt (derived from Lorentz transform)
+                const leftLabX = -lPrime / (2 * gamma) + v * labT;
+                const rightLabX = lPrime / (2 * gamma) + v * labT;
+
+                lengthRods.contracted.position.set((leftLabX + rightLabX) / 2, labT, 0.8);
+                lengthRods.contracted.rotation.z = 0; // Horizontal in lab frame
+                lengthRods.contracted.scale.x = contractedLength;
+                lengthRods.contracted.visible = true;
+            } else {
+                // Hide rods if L' = 0 or rods disabled
+                lengthRods.rest.visible = false;
+                lengthRods.contracted.visible = false;
+            }
 
             // Camera follow mode
             if (state.cameraFollow) {
