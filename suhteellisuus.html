@@ -89,6 +89,7 @@
         <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
 
         <div class="controls">
+            <button id="btn-grid" class="active" data-on="Taso: PÄÄLLÄ" data-off="Taso: POIS">Taso: PÄÄLLÄ</button>
             <button id="btn-follow" class="active" data-on="Liikkuva taso: PÄÄLLÄ" data-off="Liikkuva taso: POIS">Liikkuva taso: PÄÄLLÄ</button>
             <button id="btn-camera" class="off" data-on="Kameran seuranta: PÄÄLLÄ" data-off="Kameran seuranta: POIS">Kameran seuranta: POIS</button>
             <button id="btn-axes" class="off" data-on="Akselit: PÄÄLLÄ" data-off="Akselit: POIS">Akselit: POIS</button>
@@ -148,7 +149,8 @@
         scene.add(future.group, past.group);
 
         const movingSystem = new THREE.Group();
-        movingSystem.add(new THREE.GridHelper(100, 50, 0x38bdf8, 0x1e293b));
+        const gridHelper = new THREE.GridHelper(100, 50, 0x38bdf8, 0x1e293b);
+        movingSystem.add(gridHelper);
         scene.add(movingSystem);
 
         const ringBalls = Array.from({ length: numBalls }, () => {
@@ -171,7 +173,7 @@
         scene.add(labXAxis, labTAxis);
 
         // State & UI
-        const state = { lightMode: 1, followTime: true, cameraFollow: false, showLines: true, showAxes: false };
+        const state = { lightMode: 1, followTime: true, cameraFollow: false, showLines: true, showAxes: false, showGrid: true };
         const ui = {
             v: document.getElementById('v-slider'),
             t: document.getElementById('t-slider'),
@@ -190,6 +192,7 @@
         // Event Listeners
         document.getElementById('btn-camera').onclick = (e) => { state.cameraFollow = !state.cameraFollow; updateBtn(e.target, state.cameraFollow); };
         document.getElementById('btn-follow').onclick = (e) => { state.followTime = !state.followTime; updateBtn(e.target, state.followTime); };
+        document.getElementById('btn-grid').onclick = (e) => { state.showGrid = !state.showGrid; updateBtn(e.target, state.showGrid); gridHelper.visible = state.showGrid; };
         document.getElementById('btn-future').onclick = (e) => { future.group.visible = !future.group.visible; updateBtn(e.target, future.group.visible); };
         document.getElementById('btn-past').onclick = (e) => { past.group.visible = !past.group.visible; updateBtn(e.target, past.group.visible); };
         document.getElementById('btn-axes').onclick = (e) => {
