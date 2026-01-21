@@ -97,6 +97,51 @@
             opacity: 0.5;
             border-left: 4px solid var(--accent-warning);
         }
+
+        .stats {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-primary);
+        }
+
+        .stats h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.85em;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--accent-gold);
+        }
+
+        .stat-value.highlight {
+            color: var(--accent);
+        }
+
+        .stat-formula {
+            font-size: 0.75em;
+            color: #64748b;
+            margin-top: 2px;
+        }
     </style>
 </head>
 
@@ -128,6 +173,34 @@
             <button id="btn-past" class="active" data-on="Past cone: ON" data-off="Past cone: OFF">Past cone: ON</button>
             <button id="btn-mode" class="active">Light: Spheres (1D)</button>
             <button id="btn-line" class="active" data-on="Worldlines: ON" data-off="Worldlines: OFF">Worldlines: ON</button>
+        </div>
+
+        <div class="stats">
+            <h4>Lab Frame Observations</h4>
+            <div class="stat-row">
+                <span class="stat-label">Lorentz factor (γ)</span>
+                <span class="stat-value highlight" id="stat-gamma">1.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Lab time (t)</span>
+                <span class="stat-value" id="stat-t">0.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Lab position (x)</span>
+                <span class="stat-value" id="stat-x">0.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Observed length (L)</span>
+                <span class="stat-value" id="stat-l">0.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Length contraction</span>
+                <span class="stat-value" id="stat-contraction">1.00×</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Time dilation</span>
+                <span class="stat-value" id="stat-dilation">1.00×</span>
+            </div>
         </div>
     </div>
 
@@ -367,6 +440,14 @@
                 v: document.getElementById('v-val'),
                 t: document.getElementById('t-val'),
                 l: document.getElementById('l-val')
+            },
+            stats: {
+                gamma: document.getElementById('stat-gamma'),
+                t: document.getElementById('stat-t'),
+                x: document.getElementById('stat-x'),
+                l: document.getElementById('stat-l'),
+                contraction: document.getElementById('stat-contraction'),
+                dilation: document.getElementById('stat-dilation')
             }
         };
 
@@ -491,6 +572,18 @@
             ui.displays.v.innerText = v.toFixed(2);
             ui.displays.t.innerText = tPrime.toFixed(2);
             ui.displays.l.innerText = lPrime.toFixed(2);
+
+            // Calculate lab frame values
+            const labCoords = Physics.lorentzTransform(0, tPrime, v);
+            const contractedLength = lPrime / gamma;  // Length contraction: L = L'/γ
+
+            // Update stats panel
+            ui.stats.gamma.innerText = gamma.toFixed(3);
+            ui.stats.t.innerText = labCoords.t.toFixed(2);
+            ui.stats.x.innerText = labCoords.x.toFixed(2);
+            ui.stats.l.innerText = contractedLength.toFixed(2);
+            ui.stats.contraction.innerText = (1 / gamma).toFixed(3) + '×';
+            ui.stats.dilation.innerText = gamma.toFixed(3) + '×';
 
             // Update light cone visibility based on mode
             const show2D = state.lightMode === 2;
