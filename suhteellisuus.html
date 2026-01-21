@@ -5,11 +5,24 @@
     <meta charset="UTF-8">
     <title>Lorentz Simulator</title>
     <style>
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: rgba(15, 23, 42, 0.95);
+            --bg-button: #1e293b;
+            --bg-button-hover: #334155;
+            --border-primary: #334155;
+            --border-secondary: #475569;
+            --accent: #38bdf8;
+            --accent-warning: #f43f5e;
+            --accent-gold: #facc15;
+            --text-primary: white;
+        }
+
         body {
             margin: 0;
-            background: #020617;
-            color: white;
-            font-family: sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: system-ui, -apple-system, sans-serif;
             overflow: hidden;
         }
 
@@ -18,18 +31,24 @@
             top: 20px;
             left: 20px;
             width: 280px;
-            background: rgba(15, 23, 42, 0.95);
+            background: var(--bg-panel);
             padding: 20px;
             border-radius: 12px;
-            border: 1px solid #334155;
+            border: 1px solid var(--border-primary);
             z-index: 100;
         }
 
-        input[type=range] {
-            width: 100%;
-            cursor: pointer;
-            accent-color: #38bdf8;
-            margin-top: 5px;
+        h3 {
+            margin: 0 0 10px 0;
+            color: var(--accent-gold);
+        }
+
+        .slider-group {
+            margin-bottom: 12px;
+        }
+
+        .slider-group:first-of-type {
+            margin-top: 0;
         }
 
         .label {
@@ -37,6 +56,13 @@
             justify-content: space-between;
             margin-bottom: 5px;
             font-size: 0.9em;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--accent);
+            margin-top: 5px;
         }
 
         .controls {
@@ -47,9 +73,9 @@
         }
 
         button {
-            background: #1e293b;
-            color: white;
-            border: 1px solid #475569;
+            background: var(--bg-button);
+            color: var(--text-primary);
+            border: 1px solid var(--border-secondary);
             padding: 10px;
             border-radius: 6px;
             cursor: pointer;
@@ -59,34 +85,39 @@
         }
 
         button:hover {
-            background: #334155;
-            border-color: #38bdf8;
+            background: var(--bg-button-hover);
+            border-color: var(--accent);
         }
 
         button.active {
-            border-left: 4px solid #38bdf8;
+            border-left: 4px solid var(--accent);
         }
 
         button.off {
             opacity: 0.5;
-            border-left: 4px solid #f43f5e;
+            border-left: 4px solid var(--accent-warning);
         }
     </style>
 </head>
 
 <body>
-
     <div id="ui">
-        <h3 style="margin: 0 0 10px 0; color: #facc15;">Lorentz Simulator</h3>
+        <h3>Lorentz Simulator</h3>
 
-        <div class="label">Velocity (v/c): <b id="v-val">0.00</b></div>
-        <input type="range" id="v-slider" min="-0.95" max="0.99" step="0.01" value="0">
+        <div class="slider-group">
+            <div class="label">Velocity (v/c): <b id="v-val">0.00</b></div>
+            <input type="range" id="v-slider" min="-0.95" max="0.99" step="0.01" value="0">
+        </div>
 
-        <div class="label" style="margin-top:10px;">Rest length (L'): <b id="l-val">20.00</b></div>
-        <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
+        <div class="slider-group">
+            <div class="label">Rest length (L'): <b id="l-val">0.00</b></div>
+            <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
+        </div>
 
-        <div class="label" style="margin-top:10px;">Proper time (t'): <b id="t-val">0.00</b></div>
-        <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
+        <div class="slider-group">
+            <div class="label">Proper time (t'): <b id="t-val">0.00</b></div>
+            <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
+        </div>
 
         <div class="controls">
             <button id="btn-grid" class="active" data-on="Grid: ON" data-off="Grid: OFF">Grid: ON</button>
@@ -101,168 +132,394 @@
     </div>
 
     <script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-}
-</script>
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // Scene setup
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            cone: {
+                size: 100,
+                segments: 64
+            },
+            colors: {
+                lightCone: 0xfacc15,
+                grid: { primary: 0x38bdf8, secondary: 0x1e293b },
+                worldline: { center: 0x10b981, edges: 0xf43f5e },
+                axes: 0x64748b,
+                lightBalls: 0xffffff
+            },
+            camera: {
+                fov: 75,
+                near: 0.1,
+                far: 2000,
+                initialPosition: { x: 45, y: 30, z: 45 }
+            },
+            worldline: {
+                range: 100,
+                step: 5
+            }
+        };
+
+        // ============================================
+        // PHYSICS UTILITIES
+        // ============================================
+        const Physics = {
+            /** Calculate Lorentz factor γ = 1/√(1 - v²) */
+            gamma(v) {
+                return 1 / Math.sqrt(1 - v * v);
+            },
+
+            /** Lorentz transform from moving frame (x', t') to lab frame (x, t) */
+            lorentzTransform(xPrime, tPrime, v) {
+                const g = this.gamma(v);
+                return {
+                    x: g * (xPrime + v * tPrime),
+                    t: g * (tPrime + v * xPrime)
+                };
+            },
+
+            /** Get simultaneity angle for spacetime diagram */
+            simultaneityAngle(v) {
+                return Math.atan(v);
+            }
+        };
+
+        // ============================================
+        // THREE.JS SCENE SETUP
+        // ============================================
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const camera = new THREE.PerspectiveCamera(
+            CONFIG.camera.fov,
+            window.innerWidth / window.innerHeight,
+            CONFIG.camera.near,
+            CONFIG.camera.far
+        );
         const renderer = new THREE.WebGLRenderer({ antialias: true });
+
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        camera.position.set(45, 30, 45);
+        camera.position.set(
+            CONFIG.camera.initialPosition.x,
+            CONFIG.camera.initialPosition.y,
+            CONFIG.camera.initialPosition.z
+        );
         const controls = new OrbitControls(camera, renderer.domElement);
 
-        // Objects
-        const L_cone = 100;
-        const numBalls = 64;
-        const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.6 });
+        // ============================================
+        // SCENE OBJECTS
+        // ============================================
 
-        const createCone = (isFuture) => {
+        /** Create a light cone (future or past) */
+        function createLightCone(isFuture) {
+            const { size, segments } = CONFIG.cone;
+            const color = CONFIG.colors.lightCone;
+
             const group = new THREE.Group();
+
+            // Wireframe cone mesh
             const cone = new THREE.Mesh(
-                new THREE.ConeGeometry(L_cone, L_cone, numBalls, 1, true),
-                new THREE.MeshBasicMaterial({ color: 0xfacc15, wireframe: true, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
+                new THREE.ConeGeometry(size, size, segments, 1, true),
+                new THREE.MeshBasicMaterial({
+                    color,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.1,
+                    side: THREE.DoubleSide
+                })
             );
-            cone.position.y = isFuture ? L_cone / 2 : -L_cone / 2;
+            cone.position.y = isFuture ? size / 2 : -size / 2;
             if (isFuture) cone.rotation.x = Math.PI;
 
-            const l1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(L_cone, isFuture ? L_cone : -L_cone, 0)]), lineMat);
-            const l2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-L_cone, isFuture ? L_cone : -L_cone, 0)]), lineMat);
+            // 1D light lines (x-axis only)
+            const lineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.6 });
+            const yDir = isFuture ? size : -size;
 
-            group.add(cone, l1, l2);
-            return { group, cone, l1, l2 };
+            const line1 = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(size, yDir, 0)
+                ]),
+                lineMat
+            );
+            const line2 = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(-size, yDir, 0)
+                ]),
+                lineMat
+            );
+
+            group.add(cone, line1, line2);
+
+            return { group, cone, lines: [line1, line2] };
+        }
+
+        /** Create lab frame coordinate axes */
+        function createLabAxes() {
+            const axisMat = new THREE.LineBasicMaterial({
+                color: CONFIG.colors.axes,
+                transparent: true,
+                opacity: 0.8
+            });
+            const range = 200;
+
+            const xAxis = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-range, 0, 0),
+                    new THREE.Vector3(range, 0, 0)
+                ]),
+                axisMat
+            );
+            const tAxis = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, -range, 0),
+                    new THREE.Vector3(0, range, 0)
+                ]),
+                axisMat
+            );
+
+            xAxis.visible = false;
+            tAxis.visible = false;
+
+            return { x: xAxis, t: tAxis };
+        }
+
+        /** Create worldline objects */
+        function createWorldlines() {
+            const edgeMat = new THREE.LineBasicMaterial({ color: CONFIG.colors.worldline.edges });
+            const centerMat = new THREE.LineBasicMaterial({
+                color: CONFIG.colors.worldline.center,
+                transparent: true,
+                opacity: 0.5
+            });
+
+            return {
+                left: new THREE.Line(new THREE.BufferGeometry(), edgeMat),
+                right: new THREE.Line(new THREE.BufferGeometry(), edgeMat),
+                center: new THREE.Line(new THREE.BufferGeometry(), centerMat)
+            };
+        }
+
+        /** Create light pulse visualization balls */
+        function createLightBalls(count) {
+            return Array.from({ length: count }, () => {
+                const ball = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.4, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: CONFIG.colors.lightBalls })
+                );
+                scene.add(ball);
+                return ball;
+            });
+        }
+
+        // Initialize scene objects
+        const futureCone = createLightCone(true);
+        const pastCone = createLightCone(false);
+        scene.add(futureCone.group, pastCone.group);
+
+        const movingFrame = new THREE.Group();
+        const grid = new THREE.GridHelper(100, 50, CONFIG.colors.grid.primary, CONFIG.colors.grid.secondary);
+        movingFrame.add(grid);
+        scene.add(movingFrame);
+
+        const lightBalls = createLightBalls(CONFIG.cone.segments);
+
+        const worldlines = createWorldlines();
+        scene.add(worldlines.left, worldlines.right, worldlines.center);
+
+        const labAxes = createLabAxes();
+        scene.add(labAxes.x, labAxes.t);
+
+        // ============================================
+        // APPLICATION STATE
+        // ============================================
+        const state = {
+            lightMode: 1,           // 0: hidden, 1: spheres (1D), 2: ring (2D)
+            followTime: true,       // Moving grid follows proper time
+            cameraFollow: false,    // Camera follows moving frame
+            showLines: true,        // Show worldlines
+            showAxes: false,        // Show lab frame axes
+            showGrid: true          // Show moving frame grid
         };
 
-        const future = createCone(true);
-        const past = createCone(false);
-        scene.add(future.group, past.group);
-
-        const movingSystem = new THREE.Group();
-        const gridHelper = new THREE.GridHelper(100, 50, 0x38bdf8, 0x1e293b);
-        movingSystem.add(gridHelper);
-        scene.add(movingSystem);
-
-        const ringBalls = Array.from({ length: numBalls }, () => {
-            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-            scene.add(ball);
-            return ball;
-        });
-
-        // Worldlines
-        const leftLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf43f5e }));
-        const rightLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf43f5e }));
-        const worldLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.5 }));
-        scene.add(leftLine, rightLine, worldLine);
-
-        // Lab frame axes (Gray)
-        const axisMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.8 });
-        const labXAxis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-200, 0, 0), new THREE.Vector3(200, 0, 0)]), axisMat);
-        const labTAxis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -200, 0), new THREE.Vector3(0, 200, 0)]), axisMat);
-        labXAxis.visible = labTAxis.visible = false;
-        scene.add(labXAxis, labTAxis);
-
-        // State & UI
-        const state = { lightMode: 1, followTime: true, cameraFollow: false, showLines: true, showAxes: false, showGrid: true };
+        // ============================================
+        // UI ELEMENTS
+        // ============================================
         const ui = {
-            v: document.getElementById('v-slider'),
-            t: document.getElementById('t-slider'),
-            l: document.getElementById('l-slider'),
-            vDisp: document.getElementById('v-val'),
-            tDisp: document.getElementById('t-val'),
-            lDisp: document.getElementById('l-val')
+            sliders: {
+                v: document.getElementById('v-slider'),
+                t: document.getElementById('t-slider'),
+                l: document.getElementById('l-slider')
+            },
+            displays: {
+                v: document.getElementById('v-val'),
+                t: document.getElementById('t-val'),
+                l: document.getElementById('l-val')
+            }
         };
 
-        const updateBtn = (btn, active) => {
+        /** Update toggle button state and text */
+        function updateButton(btn, active) {
             btn.classList.toggle('active', active);
             btn.classList.toggle('off', !active);
             btn.innerText = active ? btn.dataset.on : btn.dataset.off;
+        }
+
+        /** Create a toggle handler for a state property */
+        function createToggleHandler(stateKey, onToggle) {
+            return (e) => {
+                state[stateKey] = !state[stateKey];
+                updateButton(e.target, state[stateKey]);
+                onToggle?.(state[stateKey]);
+            };
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        // Toggle buttons
+        document.getElementById('btn-grid').onclick =
+            createToggleHandler('showGrid', (on) => grid.visible = on);
+
+        document.getElementById('btn-follow').onclick =
+            createToggleHandler('followTime');
+
+        document.getElementById('btn-camera').onclick =
+            createToggleHandler('cameraFollow');
+
+        document.getElementById('btn-axes').onclick =
+            createToggleHandler('showAxes', (on) => labAxes.x.visible = labAxes.t.visible = on);
+
+        document.getElementById('btn-line').onclick =
+            createToggleHandler('showLines', (on) => {
+                worldlines.left.visible = worldlines.right.visible = worldlines.center.visible = on;
+            });
+
+        document.getElementById('btn-future').onclick = (e) => {
+            futureCone.group.visible = !futureCone.group.visible;
+            updateButton(e.target, futureCone.group.visible);
         };
 
-        // Event Listeners
-        document.getElementById('btn-camera').onclick = (e) => { state.cameraFollow = !state.cameraFollow; updateBtn(e.target, state.cameraFollow); };
-        document.getElementById('btn-follow').onclick = (e) => { state.followTime = !state.followTime; updateBtn(e.target, state.followTime); };
-        document.getElementById('btn-grid').onclick = (e) => { state.showGrid = !state.showGrid; updateBtn(e.target, state.showGrid); gridHelper.visible = state.showGrid; };
-        document.getElementById('btn-future').onclick = (e) => { future.group.visible = !future.group.visible; updateBtn(e.target, future.group.visible); };
-        document.getElementById('btn-past').onclick = (e) => { past.group.visible = !past.group.visible; updateBtn(e.target, past.group.visible); };
-        document.getElementById('btn-axes').onclick = (e) => {
-            state.showAxes = !state.showAxes;
-            updateBtn(e.target, state.showAxes);
-            labXAxis.visible = labTAxis.visible = state.showAxes;
-        };
-        document.getElementById('btn-line').onclick = (e) => {
-            state.showLines = !state.showLines;
-            updateBtn(e.target, state.showLines);
-            leftLine.visible = rightLine.visible = worldLine.visible = state.showLines;
+        document.getElementById('btn-past').onclick = (e) => {
+            pastCone.group.visible = !pastCone.group.visible;
+            updateButton(e.target, pastCone.group.visible);
         };
 
         document.getElementById('btn-mode').onclick = (e) => {
             state.lightMode = (state.lightMode + 1) % 3;
-            const labels = ["Light: HIDDEN", "Light: Spheres (1D)", "Light: Ring (2D)"];
+            const labels = ['Light: HIDDEN', 'Light: Spheres (1D)', 'Light: Ring (2D)'];
             e.target.innerText = labels[state.lightMode];
             e.target.className = state.lightMode === 0 ? 'off' : 'active';
         };
 
-        // Double-click resets sliders
-        ui.v.ondblclick = () => ui.v.value = 0;
-        ui.t.ondblclick = () => ui.t.value = 0;
-        ui.l.ondblclick = () => ui.l.value = 0;
+        // Double-click to reset sliders
+        ui.sliders.v.ondblclick = () => ui.sliders.v.value = 0;
+        ui.sliders.t.ondblclick = () => ui.sliders.t.value = 0;
+        ui.sliders.l.ondblclick = () => ui.sliders.l.value = 0;
 
-        function animate() {
-            requestAnimationFrame(animate);
+        // Window resize
+        window.onresize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
 
-            const v = parseFloat(ui.v.value);
-            const tp = parseFloat(ui.t.value);
-            const L_prime = parseFloat(ui.l.value);
-            const gamma = 1 / Math.sqrt(1 - v * v);
-            const angle = Math.atan(v);
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
 
-            ui.vDisp.innerText = v.toFixed(2);
-            ui.tDisp.innerText = tp.toFixed(2);
-            ui.lDisp.innerText = L_prime.toFixed(2);
+        /** Calculate worldline points for an object at x' position */
+        function calculateWorldlinePoints(xPrime, v, gamma) {
+            const { range, step } = CONFIG.worldline;
+            const points = [];
 
-            future.cone.visible = past.cone.visible = (state.lightMode === 2);
-            future.l1.visible = future.l2.visible = past.l1.visible = past.l2.visible = (state.lightMode === 1);
-
-            const oldPos = movingSystem.position.clone();
-            movingSystem.position.set(state.followTime ? gamma * v * tp : 0, state.followTime ? gamma * tp : 0, 0);
-            movingSystem.rotation.z = angle;
-            movingSystem.scale.x = 1;
-
-            const pointsL = [], pointsR = [], pointsC = [];
-            for (let t_line = -100; t_line <= 100; t_line += 5) {
-                pointsC.push(new THREE.Vector3(gamma * (v * t_line), gamma * t_line, 0));
-                pointsL.push(new THREE.Vector3(gamma * (-L_prime / 2 + v * t_line), gamma * (t_line + v * (-L_prime / 2)), 0));
-                pointsR.push(new THREE.Vector3(gamma * (L_prime / 2 + v * t_line), gamma * (t_line + v * (L_prime / 2)), 0));
+            for (let tPrime = -range; tPrime <= range; tPrime += step) {
+                const transformed = Physics.lorentzTransform(xPrime, tPrime, v);
+                points.push(new THREE.Vector3(transformed.x, transformed.t, 0));
             }
-            leftLine.geometry.setFromPoints(pointsL);
-            rightLine.geometry.setFromPoints(pointsR);
-            worldLine.geometry.setFromPoints(pointsC);
 
-            ringBalls.forEach((ball, i) => {
-                const isVisible = state.lightMode !== 0 && (state.lightMode === 2 || i === 0 || i === numBalls / 2);
+            return points;
+        }
+
+        /** Update light ball positions */
+        function updateLightBalls(v, gamma, tPrime) {
+            const numBalls = CONFIG.cone.segments;
+
+            lightBalls.forEach((ball, i) => {
+                // In 1D mode, only show two balls (front and back)
+                const isVisible = state.lightMode !== 0 &&
+                    (state.lightMode === 2 || i === 0 || i === numBalls / 2);
                 ball.visible = isVisible;
 
                 if (isVisible) {
                     const phi = (i / numBalls) * Math.PI * 2;
-                    const xp = Math.cos(phi) * tp;
-                    const zp = Math.sin(phi) * tp;
-                    ball.position.set(gamma * (xp + v * tp), gamma * (tp + v * xp), zp);
+                    const xPrime = Math.cos(phi) * tPrime;
+                    const zPrime = Math.sin(phi) * tPrime;
+
+                    const transformed = Physics.lorentzTransform(xPrime, tPrime, v);
+                    ball.position.set(transformed.x, transformed.t, zPrime);
                 }
             });
+        }
 
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Read current values
+            const v = parseFloat(ui.sliders.v.value);
+            const tPrime = parseFloat(ui.sliders.t.value);
+            const lPrime = parseFloat(ui.sliders.l.value);
+
+            // Calculate physics
+            const gamma = Physics.gamma(v);
+            const angle = Physics.simultaneityAngle(v);
+
+            // Update UI displays
+            ui.displays.v.innerText = v.toFixed(2);
+            ui.displays.t.innerText = tPrime.toFixed(2);
+            ui.displays.l.innerText = lPrime.toFixed(2);
+
+            // Update light cone visibility based on mode
+            const show2D = state.lightMode === 2;
+            const show1D = state.lightMode === 1;
+            futureCone.cone.visible = pastCone.cone.visible = show2D;
+            futureCone.lines.forEach(l => l.visible = show1D);
+            pastCone.lines.forEach(l => l.visible = show1D);
+
+            // Update moving reference frame
+            const oldPos = movingFrame.position.clone();
+            if (state.followTime) {
+                const origin = Physics.lorentzTransform(0, tPrime, v);
+                movingFrame.position.set(origin.x, origin.t, 0);
+            } else {
+                movingFrame.position.set(0, 0, 0);
+            }
+            movingFrame.rotation.z = angle;
+
+            // Update worldlines
+            worldlines.center.geometry.setFromPoints(calculateWorldlinePoints(0, v, gamma));
+            worldlines.left.geometry.setFromPoints(calculateWorldlinePoints(-lPrime / 2, v, gamma));
+            worldlines.right.geometry.setFromPoints(calculateWorldlinePoints(lPrime / 2, v, gamma));
+
+            // Update light balls
+            updateLightBalls(v, gamma, tPrime);
+
+            // Camera follow mode
             if (state.cameraFollow) {
-                const delta = movingSystem.position.clone().sub(oldPos);
+                const delta = movingFrame.position.clone().sub(oldPos);
                 camera.position.add(delta);
                 controls.target.add(delta);
             }
@@ -272,11 +529,6 @@
         }
 
         animate();
-        window.onresize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
     </script>
 </body>
 
