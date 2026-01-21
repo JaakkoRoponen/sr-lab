@@ -358,8 +358,8 @@
             showWorldlines: true,
             showAxes: false,
             showGrid: true,
-            showRods: true,
-            showSimultaneity: true,
+            showRods: false,
+            showSimultaneity: false,
             showTicks: true
         };
 
@@ -384,8 +384,8 @@
             'Visualizations',
             ['showWorldlines', 'Worldlines', () => worldlines.center.visible = worldlines.left.visible = worldlines.right.visible = state.showWorldlines],
             ['showTicks', 'Time ticks', () => ticks.visible = state.showTicks],
-            ['showRods', 'Length rods'],
-            ['showSimultaneity', 'Lab "now"', () => labNowLine.visible = state.showSimultaneity]
+            ['showRods', 'Length rods', null, false],
+            ['showSimultaneity', 'Lab "now"', () => labNowLine.visible = state.showSimultaneity, false]
         ];
 
         // Initialize state for cone visibility
