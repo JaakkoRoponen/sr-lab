@@ -91,6 +91,7 @@
         <div class="controls">
             <button id="btn-follow" class="active" data-on="Liikkuva taso: PÄÄLLÄ" data-off="Liikkuva taso: POIS">Liikkuva taso: PÄÄLLÄ</button>
             <button id="btn-camera" class="off" data-on="Kameran seuranta: PÄÄLLÄ" data-off="Kameran seuranta: POIS">Kameran seuranta: POIS</button>
+            <button id="btn-axes" class="off" data-on="Akselit: PÄÄLLÄ" data-off="Akselit: POIS">Akselit: POIS</button>
             <button id="btn-future" class="active" data-on="Tulevaisuus: PÄÄLLÄ" data-off="Tulevaisuus: POIS">Tulevaisuus: PÄÄLLÄ</button>
             <button id="btn-past" class="active" data-on="Menneisyys: PÄÄLLÄ" data-off="Menneisyys: POIS">Menneisyys: PÄÄLLÄ</button>
             <button id="btn-mode" class="active">Valo: Pallot (1D)</button>
@@ -162,8 +163,15 @@
         const worldLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.5 }));
         scene.add(leftLine, rightLine, worldLine);
 
+        // Laboratorioakselit (Harmaat)
+        const axisMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.8 });
+        const labXAxis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-200, 0, 0), new THREE.Vector3(200, 0, 0)]), axisMat);
+        const labTAxis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -200, 0), new THREE.Vector3(0, 200, 0)]), axisMat);
+        labXAxis.visible = labTAxis.visible = false;
+        scene.add(labXAxis, labTAxis);
+
         // State & UI
-        const state = { lightMode: 1, followTime: true, cameraFollow: false, showLines: true };
+        const state = { lightMode: 1, followTime: true, cameraFollow: false, showLines: true, showAxes: false };
         const ui = {
             v: document.getElementById('v-slider'),
             t: document.getElementById('t-slider'),
@@ -184,6 +192,11 @@
         document.getElementById('btn-follow').onclick = (e) => { state.followTime = !state.followTime; updateBtn(e.target, state.followTime); };
         document.getElementById('btn-future').onclick = (e) => { future.group.visible = !future.group.visible; updateBtn(e.target, future.group.visible); };
         document.getElementById('btn-past').onclick = (e) => { past.group.visible = !past.group.visible; updateBtn(e.target, past.group.visible); };
+        document.getElementById('btn-axes').onclick = (e) => {
+            state.showAxes = !state.showAxes;
+            updateBtn(e.target, state.showAxes);
+            labXAxis.visible = labTAxis.visible = state.showAxes;
+        };
         document.getElementById('btn-line').onclick = (e) => {
             state.showLines = !state.showLines;
             updateBtn(e.target, state.showLines);
