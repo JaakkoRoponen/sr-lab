@@ -216,17 +216,17 @@
     <div id="ui">
         <h3>Special Relativity Lab</h3>
 
-        <div class="slider-group">
+        <div class="slider-group" title="Speed of the moving frame relative to the lab, as a fraction of light speed (c)">
             <div class="label">Velocity (v/c): <b id="v-val">0.00</b></div>
             <input type="range" id="v-slider" min="-0.95" max="0.99" step="0.01" value="0">
         </div>
 
-        <div class="slider-group">
+        <div class="slider-group" title="Time measured by a clock moving with the object (the object's own time)">
             <div class="label">Proper time (t'): <b id="t-val">0.00</b></div>
             <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
         </div>
 
-        <div class="slider-group">
+        <div class="slider-group" title="Length of an object measured in its own rest frame (its 'true' length)">
             <div class="label">Rest length (L'): <b id="l-val">0.00</b></div>
             <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
         </div>
@@ -234,28 +234,28 @@
         <div class="controls" id="toggle-buttons"></div>
 
         <div class="stats">
-            <h4>Lab Frame Observations</h4>
-            <div class="stat-row">
+            <h4 title="What a stationary observer in the lab frame measures">Lab Frame Observations</h4>
+            <div class="stat-row" title="γ = 1/√(1−v²/c²) — determines the strength of relativistic effects">
                 <span class="stat-label">Lorentz factor (γ)</span>
                 <span class="stat-value highlight" id="stat-gamma">1.00</span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row" title="Time coordinate in the lab frame: t = γ(t' + vx'/c²)">
                 <span class="stat-label">Lab time (t)</span>
                 <span class="stat-value" id="stat-t">0.00</span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row" title="Position coordinate in the lab frame: x = γ(x' + vt')">
                 <span class="stat-label">Lab position (x)</span>
                 <span class="stat-value" id="stat-x">0.00</span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row" title="Length measured by lab observer: L = L'/γ (shorter than rest length)">
                 <span class="stat-label">Observed length (L)</span>
                 <span class="stat-value" id="stat-l">0.00</span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row" title="Moving objects appear shorter: L/L' = 1/γ">
                 <span class="stat-label">Length contraction</span>
                 <span class="stat-value" id="stat-contraction">1.00×</span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row" title="Moving clocks run slower: Δt/Δt' = γ (lab sees more time pass)">
                 <span class="stat-label">Time dilation</span>
                 <span class="stat-value" id="stat-dilation">1.00×</span>
             </div>
@@ -416,25 +416,37 @@
         const displays = { v: $('v-val'), t: $('t-val'), l: $('l-val') };
         const stats = { gamma: $('stat-gamma'), t: $('stat-t'), x: $('stat-x'), l: $('stat-l'), contraction: $('stat-contraction'), dilation: $('stat-dilation') };
 
-        // Toggle button definitions: [key, label, onToggle, initial, modes] or 'Group Name'
+        // Toggle button definitions: [key, label, onToggle, initial, modes, tooltip] or 'Group Name'
         const toggles = [
             'Reference Frame',
-            ['showGrid', 'Grid', () => { grid.visible = state.showGrid; updateGridDependents(); }],
-            ['followTime', "Grid follow t'", () => updateGridDependents()],
-            ['cameraFollow', 'Lock camera to grid', null, false],
-            ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false],
+            ['showGrid', 'Grid', () => { grid.visible = state.showGrid; updateGridDependents(); }, true, null,
+                "The moving frame's coordinate grid — tilted due to relativity of simultaneity"],
+            ['followTime', "Grid follow t'", () => updateGridDependents(), true, null,
+                "Move the grid with proper time t' (follows the object through spacetime)"],
+            ['cameraFollow', 'Lock camera to grid', null, false, null,
+                "Camera follows the moving grid, keeping it centered in view"],
+            ['showAxes', 'Lab axes', () => labAxes.x.visible = labAxes.t.visible = state.showAxes, false, null,
+                "Show the lab frame's x (horizontal) and t (vertical) axes"],
 
             'Light Cones',
-            ['futureCone', 'Future lines', () => { }],
-            ['pastCone', 'Past lines', () => { }],
-            ['showConeMesh', 'Cone mesh', () => { }, false],
-            ['lightMode', 'Light pulses', null, 1, ['OFF', '1D', '2D']],
+            ['futureCone', 'Future lines', () => { }, true, null,
+                "Lines showing the future light cone — paths light could take going forward in time"],
+            ['pastCone', 'Past lines', () => { }, true, null,
+                "Lines showing the past light cone — paths light could have taken to reach here"],
+            ['showConeMesh', 'Cone mesh', () => { }, false, null,
+                "3D wireframe surface of the light cones (full 2D spatial representation)"],
+            ['lightMode', 'Light pulses', null, 1, ['OFF', '1D', '2D'],
+                "Animated light pulses: 1D shows along x-axis only, 2D shows full circular wavefront"],
 
             'Visualizations',
-            ['showWorldlines', 'Worldlines', () => worldlines.center.visible = worldlines.left.visible = worldlines.right.visible = state.showWorldlines],
-            ['showTicks', 'Time ticks', () => ticks.visible = state.showTicks],
-            ['showRods', 'Length rods', null, false],
-            ['showSimultaneity', 'Lab "now"', () => labNowLine.visible = state.showSimultaneity, false]
+            ['showWorldlines', 'Worldlines', () => worldlines.center.visible = worldlines.left.visible = worldlines.right.visible = state.showWorldlines, true, null,
+                "Paths through spacetime — green is center, red shows object's ends"],
+            ['showTicks', 'Time ticks', () => ticks.visible = state.showTicks, true, null,
+                "Tick marks on worldlines showing equal intervals of proper time t'"],
+            ['showRods', 'Length rods', null, false, null,
+                "Visual comparison: cyan rod (rest length L') vs pink rod (contracted length L)"],
+            ['showSimultaneity', 'Lab "now"', () => labNowLine.visible = state.showSimultaneity, false, null,
+                "Horizontal line showing events that are simultaneous in the lab frame"]
         ];
 
         // Initialize state for cone visibility
@@ -490,9 +502,10 @@
                 return;
             }
 
-            const [key, label, onToggle, initial = true, modes] = item;
+            const [key, label, onToggle, initial = true, modes, tooltip] = item;
             if (state[key] === undefined) state[key] = initial;
             const btn = document.createElement('button');
+            if (tooltip) btn.title = tooltip;
 
             const update = () => {
                 if (modes) {
