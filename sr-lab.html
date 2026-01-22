@@ -58,12 +58,36 @@
         h3 {
             margin: 0 0 10px;
             color: var(--accent-gold);
-            cursor: grab;
-            user-select: none;
         }
 
-        h3:active {
+        .drag-handle {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            cursor: grab;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            padding: 3px;
+        }
+
+        .drag-handle:hover {
+            opacity: 0.8;
+        }
+
+        .drag-handle:active {
             cursor: grabbing;
+        }
+
+        .drag-handle span {
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 1px;
         }
 
         .slider-group {
@@ -214,6 +238,10 @@
 
 <body>
     <div id="ui">
+        <div class="drag-handle" title="Drag to move panel">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+        </div>
         <h3>Special Relativity Lab</h3>
 
         <div class="slider-group" title="Speed of the moving frame relative to the lab, as a fraction of light speed (c)">
@@ -559,7 +587,7 @@
 
         // Draggable panel
         const panel = $('ui');
-        const handle = panel.querySelector('h3');
+        const handle = panel.querySelector('.drag-handle');
         let dragging = false, dragOffset = { x: 0, y: 0 };
 
         handle.onmousedown = (e) => {
