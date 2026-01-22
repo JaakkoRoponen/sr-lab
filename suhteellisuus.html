@@ -524,6 +524,26 @@
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
 
+        // Sticky zero for sliders - creates resistance when crossing zero
+        const addStickyZero = (slider, range) => {
+            let lastVal = 0;
+            slider.addEventListener('input', () => {
+                const val = parseFloat(slider.value);
+                const crossingZero = (lastVal <= 0 && val > 0) || (lastVal >= 0 && val < 0);
+
+                if (Math.abs(val) < range) {
+                    slider.value = 0;
+                } else if (crossingZero && Math.abs(val) < range * 2) {
+                    slider.value = 0;
+                } else {
+                    lastVal = val;
+                }
+            });
+        };
+
+        addStickyZero(sliders.t, 0.8);
+        addStickyZero(sliders.v, 0.03);
+
         // Draggable panel
         const panel = $('ui');
         const handle = panel.querySelector('h3');
