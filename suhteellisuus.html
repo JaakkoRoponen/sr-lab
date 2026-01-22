@@ -97,10 +97,46 @@
             margin-top: 10px;
             padding-bottom: 4px;
             border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-group:hover {
+            color: var(--accent);
+        }
+
+        .control-group::after {
+            content: '▼';
+            font-size: 0.8em;
+            transition: transform 0.2s;
+        }
+
+        .control-group.collapsed::after {
+            transform: rotate(-90deg);
         }
 
         .control-group:first-child {
             margin-top: 0;
+        }
+
+        .group-content {
+            display: grid;
+            gap: 6px;
+            overflow: hidden;
+            transition: grid-template-rows 0.2s;
+            grid-template-rows: 1fr;
+        }
+
+        .group-content.collapsed {
+            grid-template-rows: 0fr;
+        }
+
+        .group-content>div {
+            overflow: hidden;
+            display: grid;
+            gap: 6px;
         }
 
         button {
@@ -421,6 +457,9 @@
 
         // Build toggle buttons
         const container = $('toggle-buttons');
+        let currentGroup = null;
+        let currentGroupInner = null;
+
         toggles.forEach((item) => {
             // Group header
             if (typeof item === 'string') {
@@ -428,6 +467,26 @@
                 header.className = 'control-group';
                 header.textContent = item;
                 container.appendChild(header);
+
+                // Create collapsible content wrapper
+                currentGroup = document.createElement('div');
+                currentGroup.className = 'group-content';
+                currentGroupInner = document.createElement('div');
+                currentGroup.appendChild(currentGroupInner);
+                container.appendChild(currentGroup);
+
+                // Toggle collapse on header click
+                header.onclick = () => {
+                    header.classList.toggle('collapsed');
+                    currentGroup.classList.toggle('collapsed');
+                };
+
+                // Store reference for closure
+                const group = currentGroup;
+                header.onclick = () => {
+                    header.classList.toggle('collapsed');
+                    group.classList.toggle('collapsed');
+                };
                 return;
             }
 
@@ -452,7 +511,7 @@
             };
 
             update();
-            container.appendChild(btn);
+            (currentGroupInner || container).appendChild(btn);
 
             // Store references to dependent buttons
             if (key === 'followTime') followTimeBtn = btn;
