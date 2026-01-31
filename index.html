@@ -206,6 +206,31 @@
             animation: pulse 1.5s ease-in-out infinite;
         }
 
+        .camera-btn {
+            background: var(--bg-button);
+            color: white;
+            border: 1px solid #475569;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82em;
+            transition: all 0.2s;
+        }
+
+        .camera-btn:hover {
+            background: var(--bg-button-hover);
+            border-color: var(--accent);
+        }
+
+        .anim-input {
+            background: var(--bg-button);
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         @keyframes pulse {
 
             0%,
@@ -319,9 +344,9 @@
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
             <div style="font-size: 0.75em; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Camera Views</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button id="reset-camera-btn" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.82em; transition: all 0.2s; grid-column: span 2;" title="Reset camera to default angled view">📷 Default</button>
-                <button id="side-view-btn" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.82em; transition: all 0.2s;" title="View from the side (along x-axis)">→ Side</button>
-                <button id="top-view-btn" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.82em; transition: all 0.2s;" title="View from above (looking down on the grid)">↓ Top</button>
+                <button id="reset-camera-btn" class="camera-btn" style="grid-column: span 2;" title="Reset camera to default angled view">📷 Default</button>
+                <button id="side-view-btn" class="camera-btn" title="View from the side (along x-axis)">→ Side</button>
+                <button id="top-view-btn" class="camera-btn" title="View from above (looking down on the grid)">↓ Top</button>
             </div>
         </div>
 
@@ -332,7 +357,7 @@
                 <div style="display: grid; gap: 8px; padding-top: 8px; font-size: 0.85em;">
                     <div style="display: grid; grid-template-columns: 65px 1fr; gap: 6px; align-items: center;">
                         <label style="color: #94a3b8;">Animate:</label>
-                        <select id="anim-slider" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 4px 6px; border-radius: 4px; font-size: 0.9em;">
+                        <select id="anim-slider" class="anim-input" style="padding: 4px 6px; font-size: 0.9em;">
                             <option value="">Manual (no animation)</option>
                             <option value="t">Proper time (t')</option>
                             <option value="v">Velocity (v/c)</option>
@@ -342,13 +367,13 @@
 
                     <div style="display: grid; grid-template-columns: 65px 1fr 1fr; gap: 6px; align-items: center;">
                         <label style="color: #94a3b8;">From → To:</label>
-                        <input type="number" id="anim-start" value="0" step="0.1" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 3px; border-radius: 4px; font-size: 0.8em; width: 100%; box-sizing: border-box;">
-                        <input type="number" id="anim-end" value="10" step="0.1" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 3px; border-radius: 4px; font-size: 0.8em; width: 100%; box-sizing: border-box;">
+                        <input type="number" id="anim-start" class="anim-input" value="0" step="0.1" style="padding: 3px; font-size: 0.8em;">
+                        <input type="number" id="anim-end" class="anim-input" value="10" step="0.1" style="padding: 3px; font-size: 0.8em;">
                     </div>
 
                     <div style="display: grid; grid-template-columns: 65px 50px 1fr; gap: 8px; align-items: center;">
                         <label style="color: #94a3b8;">Duration:</label>
-                        <input type="number" id="anim-duration" value="3" min="0.5" max="30" step="0.5" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 4px; border-radius: 4px; font-size: 0.85em; width: 100%; box-sizing: border-box;">
+                        <input type="number" id="anim-duration" class="anim-input" value="3" min="0.5" max="30" step="0.5" style="padding: 4px; font-size: 0.85em;">
                         <span style="color: #64748b; font-size: 0.85em; line-height: 1;">sec</span>
                     </div>
                 </div>
@@ -405,6 +430,15 @@
             worldlineRange: 100,
             tickInterval: 5,
             tickSize: 1,
+            camera: {
+                default: [-45, 30, 45],
+                side: [0, 0, 45],
+                top: [0, 50, 0]
+            },
+            recording: {
+                fps: 15,
+                bitrate: 1000000
+            },
             colors: {
                 cone: 0xfacc15,
                 grid: [0x38bdf8, 0x1e293b],
@@ -435,8 +469,15 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(innerWidth, innerHeight);
         document.body.appendChild(renderer.domElement);
-        camera.position.set(-45, 30, 45);
+        camera.position.set(...CONFIG.camera.default);
         const controls = new OrbitControls(camera, renderer.domElement);
+
+        // Helper to set camera view
+        const setCameraView = (position) => {
+            camera.position.set(...position);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        };
 
         // ============================================
         // HELPER FUNCTIONS
@@ -614,12 +655,6 @@
                 container.appendChild(currentGroup);
 
                 // Toggle collapse on header click
-                header.onclick = () => {
-                    header.classList.toggle('collapsed');
-                    currentGroup.classList.toggle('collapsed');
-                };
-
-                // Store reference for closure
                 const group = currentGroup;
                 header.onclick = () => {
                     header.classList.toggle('collapsed');
@@ -730,12 +765,12 @@
             }
 
             // Start recording
-            const stream = renderer.domElement.captureStream(15);
+            const stream = renderer.domElement.captureStream(CONFIG.recording.fps);
             recordedChunks = [];
 
             mediaRecorder = new MediaRecorder(stream, {
                 mimeType: 'video/webm;codecs=vp9',
-                videoBitsPerSecond: 1000000
+                videoBitsPerSecond: CONFIG.recording.bitrate
             });
 
             mediaRecorder.ondataavailable = (e) => {
@@ -821,26 +856,9 @@
         };
 
         // Camera view buttons
-        const resetCameraBtn = $('reset-camera-btn');
-        resetCameraBtn.onclick = () => {
-            camera.position.set(-45, 30, 45);
-            controls.target.set(0, 0, 0);
-            controls.update();
-        };
-
-        const sideViewBtn = $('side-view-btn');
-        sideViewBtn.onclick = () => {
-            camera.position.set(0, 0, 45);
-            controls.target.set(0, 0, 0);
-            controls.update();
-        };
-
-        const topViewBtn = $('top-view-btn');
-        topViewBtn.onclick = () => {
-            camera.position.set(0, 50, 0);
-            controls.target.set(0, 0, 0);
-            controls.update();
-        };
+        $('reset-camera-btn').onclick = () => setCameraView(CONFIG.camera.default);
+        $('side-view-btn').onclick = () => setCameraView(CONFIG.camera.side);
+        $('top-view-btn').onclick = () => setCameraView(CONFIG.camera.top);
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
