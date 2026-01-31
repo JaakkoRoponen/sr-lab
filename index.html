@@ -309,7 +309,37 @@
             <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
         </div>
 
-        <div id="recording-buttons" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); display: flex; gap: 6px;"></div>
+        <div id="recording-buttons" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div id="anim-header" class="control-group collapsed" style="margin-top: 0; cursor: pointer;">Animation Settings</div>
+
+            <div id="anim-content" class="group-content collapsed">
+                <div style="display: grid; gap: 8px; padding-top: 8px; font-size: 0.85em;">
+                    <div style="display: grid; grid-template-columns: 65px 1fr; gap: 6px; align-items: center;">
+                        <label style="color: #94a3b8;">Animate:</label>
+                        <select id="anim-slider" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 4px 6px; border-radius: 4px; font-size: 0.9em;">
+                            <option value="">Manual (no animation)</option>
+                            <option value="t">Proper time (t')</option>
+                            <option value="v">Velocity (v/c)</option>
+                            <option value="l">Rest length (L')</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 65px 1fr 1fr; gap: 6px; align-items: center;">
+                        <label style="color: #94a3b8;">From → To:</label>
+                        <input type="number" id="anim-start" value="0" step="0.1" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 3px; border-radius: 4px; font-size: 0.8em; width: 100%; box-sizing: border-box;">
+                        <input type="number" id="anim-end" value="10" step="0.1" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 3px; border-radius: 4px; font-size: 0.8em; width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 65px 50px 1fr; gap: 8px; align-items: center;">
+                        <label style="color: #94a3b8;">Duration:</label>
+                        <input type="number" id="anim-duration" value="3" min="0.5" max="30" step="0.5" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 4px; border-radius: 4px; font-size: 0.85em; width: 100%; box-sizing: border-box;">
+                        <span style="color: #64748b; font-size: 0.85em; line-height: 1;">sec</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 6px; margin-top: 10px;"></div>
+        </div>
 
         <div class="controls" id="toggle-buttons"></div>
 
@@ -621,8 +651,38 @@
         let recordedChunks = [];
         let isRecording = false;
         let cancelCountdown = false;
+        let animationId = null;
         const recordBtn = document.createElement('button');
         const stopBtn = document.createElement('button');
+
+        // Animate slider smoothly
+        const animateSlider = (slider, startValue, endValue, durationMs) => {
+            return new Promise((resolve) => {
+                const startTime = performance.now();
+                slider.value = startValue;
+
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / durationMs, 1);
+
+                    // Smooth easing
+                    const eased = progress < 0.5
+                        ? 2 * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                    slider.value = startValue + (endValue - startValue) * eased;
+
+                    if (progress < 1 && isRecording) {
+                        animationId = requestAnimationFrame(animate);
+                    } else {
+                        slider.value = endValue;
+                        resolve();
+                    }
+                };
+
+                animationId = requestAnimationFrame(animate);
+            });
+        };
 
         recordBtn.style.flex = '1';
         stopBtn.style.flex = '1';
@@ -686,6 +746,25 @@
             isRecording = true;
             recordBtn.innerText = `🔴 Recording...`;
             recordBtn.classList.add('recording');
+
+            // Check if a slider is selected for automated animation
+            const sliderKey = $('anim-slider').value;
+
+            if (sliderKey) {
+                // Read animation settings from UI
+                const startValue = parseFloat($('anim-start').value);
+                const endValue = parseFloat($('anim-end').value);
+                const durationSec = parseFloat($('anim-duration').value);
+
+                // Start automated animation
+                await animateSlider(sliders[sliderKey], startValue, endValue, durationSec * 1000);
+
+                // Auto-stop after animation completes
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+            }
+            // Otherwise, manual recording - continues until user clicks stop
         };
 
         stopBtn.innerText = '⏹️ Stop & Save';
@@ -702,15 +781,28 @@
                     stopBtn.disabled = true;
                 }, 800);
             } else if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                // Stop animation
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
                 // Stop actual recording
                 mediaRecorder.stop();
             }
         };
 
-        // Add recording buttons to the container below sliders
-        const recordingContainer = $('recording-buttons');
+        // Add recording buttons to the flex container
+        const recordingContainer = $('recording-buttons').querySelector('div[style*="display: flex"]');
         recordingContainer.appendChild(recordBtn);
         recordingContainer.appendChild(stopBtn);
+
+        // Animation settings collapse/expand
+        const animHeader = $('anim-header');
+        const animContent = $('anim-content');
+        animHeader.onclick = () => {
+            animHeader.classList.toggle('collapsed');
+            animContent.classList.toggle('collapsed');
+        };
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
