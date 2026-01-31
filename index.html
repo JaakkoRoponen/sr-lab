@@ -602,13 +602,13 @@
             // Group header
             if (typeof item === 'string') {
                 const header = document.createElement('div');
-                header.className = 'control-group';
+                header.className = 'control-group collapsed';
                 header.textContent = item;
                 container.appendChild(header);
 
                 // Create collapsible content wrapper
                 currentGroup = document.createElement('div');
-                currentGroup.className = 'group-content';
+                currentGroup.className = 'group-content collapsed';
                 currentGroupInner = document.createElement('div');
                 currentGroup.appendChild(currentGroupInner);
                 container.appendChild(currentGroup);
