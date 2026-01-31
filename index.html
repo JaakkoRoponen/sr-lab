@@ -316,6 +316,15 @@
             <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
         </div>
 
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="font-size: 0.75em; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Camera Views</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button id="reset-camera-btn" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.82em; transition: all 0.2s; grid-column: span 2;" title="Reset camera to default angled view">📷 Default</button>
+                <button id="side-view-btn" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.82em; transition: all 0.2s;" title="View from the side (along x-axis)">→ Side</button>
+                <button id="top-view-btn" style="background: var(--bg-button); color: white; border: 1px solid #475569; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.82em; transition: all 0.2s;" title="View from above (looking down on the grid)">↓ Top</button>
+            </div>
+        </div>
+
         <div id="recording-buttons" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
             <div id="anim-header" class="control-group collapsed" style="margin-top: 0; cursor: pointer;">Animation Settings</div>
 
@@ -426,7 +435,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(innerWidth, innerHeight);
         document.body.appendChild(renderer.domElement);
-        camera.position.set(45, 30, 45);
+        camera.position.set(-45, 30, 45);
         const controls = new OrbitControls(camera, renderer.domElement);
 
         // ============================================
@@ -809,6 +818,28 @@
         animHeader.onclick = () => {
             animHeader.classList.toggle('collapsed');
             animContent.classList.toggle('collapsed');
+        };
+
+        // Camera view buttons
+        const resetCameraBtn = $('reset-camera-btn');
+        resetCameraBtn.onclick = () => {
+            camera.position.set(-45, 30, 45);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        };
+
+        const sideViewBtn = $('side-view-btn');
+        sideViewBtn.onclick = () => {
+            camera.position.set(0, 0, 45);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        };
+
+        const topViewBtn = $('top-view-btn');
+        topViewBtn.onclick = () => {
+            camera.position.set(0, 50, 0);
+            controls.target.set(0, 0, 0);
+            controls.update();
         };
 
         // Slider double-click reset
