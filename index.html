@@ -195,6 +195,23 @@
             border-left: 4px solid #475569;
         }
 
+        button.recording {
+            border-left: 4px solid #ef4444;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
         .stats {
             margin-top: 15px;
             padding-top: 15px;
@@ -291,6 +308,8 @@
             <div class="label">Rest length (L'): <b id="l-val">0.00</b></div>
             <input type="range" id="l-slider" min="0" max="50" step="1" value="0">
         </div>
+
+        <div id="recording-buttons" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); display: flex; gap: 6px;"></div>
 
         <div class="controls" id="toggle-buttons"></div>
 
@@ -594,6 +613,104 @@
 
         // Initial state check
         updateGridDependents();
+
+        // ============================================
+        // VIDEO RECORDING (using MediaRecorder)
+        // ============================================
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let cancelCountdown = false;
+        const recordBtn = document.createElement('button');
+        const stopBtn = document.createElement('button');
+
+        recordBtn.style.flex = '1';
+        stopBtn.style.flex = '1';
+
+        recordBtn.innerText = '🔴 Start Recording';
+        recordBtn.title = 'Start capturing video animation';
+        recordBtn.onclick = async () => {
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+            cancelCountdown = false;
+
+            // Countdown helper
+            const countdown = async (seconds) => {
+                for (let i = seconds; i > 0; i--) {
+                    if (cancelCountdown) return false;
+                    recordBtn.innerText = `⏱️ Starting in ${i}...`;
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                return true;
+            };
+
+            const shouldRecord = await countdown(3);
+
+            if (!shouldRecord) {
+                recordBtn.innerText = '🔴 Start Recording';
+                recordBtn.disabled = false;
+                stopBtn.disabled = true;
+                return;
+            }
+
+            // Start recording
+            const stream = renderer.domElement.captureStream(15);
+            recordedChunks = [];
+
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9',
+                videoBitsPerSecond: 1000000
+            });
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'special-relativity-lab.webm';
+                a.click();
+                URL.revokeObjectURL(url);
+
+                recordBtn.innerText = '🔴 Start Recording';
+                recordBtn.classList.remove('recording');
+                recordBtn.disabled = false;
+                stopBtn.disabled = true;
+                isRecording = false;
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            recordBtn.innerText = `🔴 Recording...`;
+            recordBtn.classList.add('recording');
+        };
+
+        stopBtn.innerText = '⏹️ Stop & Save';
+        stopBtn.title = 'Stop recording and save video file';
+        stopBtn.disabled = true;
+        stopBtn.onclick = () => {
+            if (!isRecording) {
+                // Cancel countdown
+                cancelCountdown = true;
+                recordBtn.innerText = '❌ Cancelled';
+                setTimeout(() => {
+                    recordBtn.innerText = '🔴 Start Recording';
+                    recordBtn.disabled = false;
+                    stopBtn.disabled = true;
+                }, 800);
+            } else if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                // Stop actual recording
+                mediaRecorder.stop();
+            }
+        };
+
+        // Add recording buttons to the container below sliders
+        const recordingContainer = $('recording-buttons');
+        recordingContainer.appendChild(recordBtn);
+        recordingContainer.appendChild(stopBtn);
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
