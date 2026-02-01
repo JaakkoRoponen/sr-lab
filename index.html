@@ -496,7 +496,7 @@
         );
 
         const box = (color, opacity = 1) => new THREE.Mesh(
-            new THREE.BoxGeometry(1, 1.5, 0.5),
+            new THREE.BoxGeometry(1, 0.5, 0.3),
             new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity })
         );
 
@@ -566,7 +566,7 @@
 
         // Light balls
         const lightBalls = Array.from({ length: CONFIG.coneSegments }, () => {
-            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
             scene.add(ball);
             return ball;
         });
@@ -1007,7 +1007,7 @@
             rods.rest.rotation.z = angle;
             rods.rest.scale.x = lPrime;
             rods.rest.visible = showRods;
-            rods.contracted.position.set(lab.x, lab.t, 0.8);
+            rods.contracted.position.set(lab.x, lab.t, 0);
             rods.contracted.rotation.z = 0;
             rods.contracted.scale.x = contracted;
             rods.contracted.visible = showRods;
