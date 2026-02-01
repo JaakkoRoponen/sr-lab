@@ -333,7 +333,7 @@
 
         <div class="slider-group" title="Time measured by a clock moving with the object (the object's own time)">
             <div class="label">Proper time (t'): <b id="t-val">0.00</b></div>
-            <input type="range" id="t-slider" min="-40" max="40" step="0.1" value="0">
+            <input type="range" id="t-slider" min="-25" max="25" step="0.1" value="0">
         </div>
 
         <div class="slider-group" title="Length of an object measured in its own rest frame (its 'true' length)">
@@ -425,15 +425,22 @@
         // CONFIGURATION
         // ============================================
         const CONFIG = {
-            coneSize: 100,
+            coneSize: 40,
             coneSegments: 64,
-            worldlineRange: 100,
-            tickInterval: 5,
-            tickSize: 1,
+            worldlineRange: 40,
+            tickInterval: 1,
+            tickSize: 0.5,
+            grid: {
+                size: 50,
+                divisions: 50  // 1 unit per division (size/divisions = 1)
+            },
+            labAxesLength: 45,
+            labNowLineLength: 30,
             camera: {
-                default: [-45, 30, 45],
-                side: [0, 0, 45],
-                top: [0, 50, 0]
+                default: [-22.5, 15, 22.5],  // Distance ~35.2
+                side: [0, 0, 35],
+                top: [0, 35, 0],
+                zoomSpeed: 4.0
             },
             recording: {
                 fps: 15,
@@ -471,6 +478,7 @@
         document.body.appendChild(renderer.domElement);
         camera.position.set(...CONFIG.camera.default);
         const controls = new OrbitControls(camera, renderer.domElement);
+        controls.zoomSpeed = CONFIG.camera.zoomSpeed;
 
         // Helper to set camera view
         const setCameraView = (position) => {
@@ -522,7 +530,7 @@
 
         // Moving frame grid
         const movingFrame = new THREE.Group();
-        const grid = new THREE.GridHelper(100, 50, ...CONFIG.colors.grid);
+        const grid = new THREE.GridHelper(CONFIG.grid.size, CONFIG.grid.divisions, ...CONFIG.colors.grid);
         movingFrame.add(grid);
         scene.add(movingFrame);
 
@@ -536,8 +544,8 @@
 
         // Lab axes
         const labAxes = { x: line(CONFIG.colors.axes, 0.8), t: line(CONFIG.colors.axes, 0.8) };
-        labAxes.x.geometry.setFromPoints([new THREE.Vector3(-200, 0, 0), new THREE.Vector3(200, 0, 0)]);
-        labAxes.t.geometry.setFromPoints([new THREE.Vector3(0, -200, 0), new THREE.Vector3(0, 200, 0)]);
+        labAxes.x.geometry.setFromPoints([new THREE.Vector3(-CONFIG.labAxesLength, 0, 0), new THREE.Vector3(CONFIG.labAxesLength, 0, 0)]);
+        labAxes.t.geometry.setFromPoints([new THREE.Vector3(0, -CONFIG.labAxesLength, 0), new THREE.Vector3(0, CONFIG.labAxesLength, 0)]);
         labAxes.x.visible = labAxes.t.visible = false;
         scene.add(labAxes.x, labAxes.t);
 
@@ -1006,8 +1014,8 @@
 
             // Simultaneity line
             labNowLine.geometry.setFromPoints([
-                new THREE.Vector3(lab.x - 60, lab.t, 0.5),
-                new THREE.Vector3(lab.x + 60, lab.t, 0.5)
+                new THREE.Vector3(lab.x - CONFIG.labNowLineLength, lab.t, 0.5),
+                new THREE.Vector3(lab.x + CONFIG.labNowLineLength, lab.t, 0.5)
             ]);
 
             // Camera follow (only when moving grid is also on)
