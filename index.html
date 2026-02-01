@@ -481,9 +481,9 @@
         controls.zoomSpeed = CONFIG.camera.zoomSpeed;
 
         // Helper to set camera view
-        const setCameraView = (position) => {
+        const setCameraView = (position, target = [0, 0, 0]) => {
             camera.position.set(...position);
-            controls.target.set(0, 0, 0);
+            controls.target.set(...target);
             controls.update();
         };
 
@@ -865,7 +865,13 @@
 
         // Camera view buttons
         $('reset-camera-btn').onclick = () => setCameraView(CONFIG.camera.default);
-        $('side-view-btn').onclick = () => setCameraView(CONFIG.camera.side);
+        $('side-view-btn').onclick = () => {
+            const framePos = movingFrame.position;
+            setCameraView(
+                [framePos.x, framePos.y, CONFIG.camera.side[2]],
+                [framePos.x, framePos.y, 0]
+            );
+        };
         $('top-view-btn').onclick = () => setCameraView(CONFIG.camera.top);
 
         // Slider double-click reset
