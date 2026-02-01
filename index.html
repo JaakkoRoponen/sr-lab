@@ -596,7 +596,7 @@
             'Reference Frame',
             ['showGrid', 'Grid', () => { grid.visible = state.showGrid; updateGridDependents(); }, true, null,
                 "The moving frame's coordinate grid — tilted due to relativity of simultaneity"],
-            ['followTime', "Grid follow t'", () => updateGridDependents(), true, null,
+            ['followTime', "Grid follows proper time", () => updateGridDependents(), true, null,
                 "Move the grid with proper time t' (follows the object through spacetime)"],
             ['cameraFollow', 'Lock camera to grid', null, false, null,
                 "Camera follows the moving grid, keeping it centered in view"],
@@ -628,15 +628,15 @@
         state.futureCone = true;
         state.pastCone = true;
 
-        // Dependency chain: Grid → Grid follow t' → Lock camera to grid
+        // Dependency chain: Grid → Grid follows proper time → Lock camera to grid
         let followTimeBtn = null;
         let cameraFollowBtn = null;
         function updateGridDependents() {
-            // Grid follow t' disabled when Grid is off
+            // Grid follows proper time disabled when Grid is off
             if (followTimeBtn) {
                 followTimeBtn.classList.toggle('disabled', !state.showGrid);
             }
-            // Lock camera disabled when Grid or Grid follow t' is off
+            // Lock camera disabled when Grid or Grid follows proper time is off
             if (cameraFollowBtn) {
                 cameraFollowBtn.classList.toggle('disabled', !state.showGrid || !state.followTime);
             }
