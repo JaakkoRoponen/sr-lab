@@ -880,13 +880,19 @@
             setCameraDistance(CONFIG.camera.zoomDefault);
         };
         $('side-view-btn').onclick = () => {
+            const dist = getCameraDistance();
             const framePos = movingFrame.position;
             setCameraView(
                 [framePos.x, framePos.y, CONFIG.camera.side[2]],
                 [framePos.x, framePos.y, 0]
             );
+            setCameraDistance(dist);
         };
-        $('top-view-btn').onclick = () => setCameraView(CONFIG.camera.top);
+        $('top-view-btn').onclick = () => {
+            const dist = getCameraDistance();
+            setCameraView(CONFIG.camera.top);
+            setCameraDistance(dist);
+        };
 
         // Zoom slider - syncs with mouse scroll zoom
         const zoomSlider = $('zoom-slider');
