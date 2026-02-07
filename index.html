@@ -348,6 +348,10 @@
                 <button id="side-view-btn" class="camera-btn" title="View from the side (along x-axis)">→ Side</button>
                 <button id="top-view-btn" class="camera-btn" title="View from above (looking down on the grid)">↓ Top</button>
             </div>
+            <div class="slider-group" style="margin-top: 10px;">
+                <div class="label">Zoom: <b id="zoom-val">35</b></div>
+                <input type="range" id="zoom-slider" min="5" max="80" step="1" value="35" title="Camera distance from target">
+            </div>
         </div>
 
         <div id="recording-buttons" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
@@ -437,10 +441,13 @@
             labAxesLength: 45,
             labNowLineLength: 30,
             camera: {
-                default: [-22.5, 15, 22.5],  // Distance ~35.2
+                default: [-22.5, 15, 22.5],  // Direction; distance from zoomDefault
                 side: [0, 0, 35],
                 top: [0, 35, 0],
-                zoomSpeed: 4.0
+                zoomSpeed: 4.0,
+                zoomMin: 5,
+                zoomMax: 80,
+                zoomDefault: 35
             },
             recording: {
                 fps: 15,
@@ -479,6 +486,8 @@
         camera.position.set(...CONFIG.camera.default);
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.zoomSpeed = CONFIG.camera.zoomSpeed;
+        controls.minDistance = CONFIG.camera.zoomMin;
+        controls.maxDistance = CONFIG.camera.zoomMax;
 
         // Helper to set camera view
         const setCameraView = (position, target = [0, 0, 0]) => {
@@ -486,6 +495,13 @@
             controls.target.set(...target);
             controls.update();
         };
+
+        const getCameraDistance = () => camera.position.distanceTo(controls.target);
+        const setCameraDistance = (d) => {
+            const dir = camera.position.clone().sub(controls.target).normalize();
+            camera.position.copy(controls.target).add(dir.multiplyScalar(d));
+        };
+        setCameraDistance(CONFIG.camera.zoomDefault);
 
         // ============================================
         // HELPER FUNCTIONS
@@ -859,7 +875,10 @@
         };
 
         // Camera view buttons
-        $('reset-camera-btn').onclick = () => setCameraView(CONFIG.camera.default);
+        $('reset-camera-btn').onclick = () => {
+            setCameraView(CONFIG.camera.default);
+            setCameraDistance(CONFIG.camera.zoomDefault);
+        };
         $('side-view-btn').onclick = () => {
             const framePos = movingFrame.position;
             setCameraView(
@@ -868,6 +887,14 @@
             );
         };
         $('top-view-btn').onclick = () => setCameraView(CONFIG.camera.top);
+
+        // Zoom slider - syncs with mouse scroll zoom
+        const zoomSlider = $('zoom-slider');
+        const zoomDisplay = $('zoom-val');
+        zoomSlider.min = CONFIG.camera.zoomMin;
+        zoomSlider.max = CONFIG.camera.zoomMax;
+        zoomSlider.value = CONFIG.camera.zoomDefault;
+        zoomSlider.oninput = () => setCameraDistance(parseFloat(zoomSlider.value));
 
         // Slider double-click reset
         Object.values(sliders).forEach(s => s.ondblclick = () => s.value = 0);
@@ -1025,6 +1052,11 @@
                 camera.position.add(delta);
                 controls.target.add(delta);
             }
+
+            // Sync zoom slider with camera distance (updates when user zooms with mouse)
+            const zoomDist = getCameraDistance();
+            zoomSlider.value = zoomDist;
+            zoomDisplay.innerText = Math.round(zoomDist);
 
             controls.update();
             renderer.render(scene, camera);
