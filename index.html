@@ -724,12 +724,7 @@
                     const elapsed = currentTime - startTime;
                     const progress = Math.min(elapsed / durationMs, 1);
 
-                    // Smooth easing
-                    const eased = progress < 0.5
-                        ? 2 * progress * progress
-                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-                    slider.value = startValue + (endValue - startValue) * eased;
+                    slider.value = startValue + (endValue - startValue) * progress;
 
                     if (progress < 1 && isRecording) {
                         animationId = requestAnimationFrame(animate);
